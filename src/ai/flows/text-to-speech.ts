@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 import wav from 'wav';
 
@@ -59,8 +60,9 @@ const textToSpeechFlow = ai.defineFlow(
     outputSchema: TextToSpeechOutputSchema,
   },
   async ({text}) => {
+    const ttsModel = googleAI.model('gemini-2.5-flash-preview-tts');
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
+      model: ttsModel,
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
