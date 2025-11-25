@@ -5,7 +5,6 @@ import { ChatLayout } from '@/components/conversation/chat-layout';
 import type { Message } from '@/lib/types';
 import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-feedback';
 import { assessSpeakingSkills } from '@/ai/flows/assess-speaking-skills';
-import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { useToast } from '@/hooks/use-toast';
 
 const initialMessages: Message[] = [
@@ -22,28 +21,33 @@ export default function AgenticConversationPage() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    if (messages[messages.length - 1]?.isAI) {
-      handleTextToSpeech(messages[messages.length - 1].text);
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.isAI) {
+      handleTextToSpeech(lastMessage.text);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
-  const handleTextToSpeech = async (text: string) => {
-    try {
-      const { audioDataUri } = await textToSpeech({ text });
-      if (audioRef.current) {
-        audioRef.current.src = audioDataUri;
-        audioRef.current.play();
-      }
-    } catch (error) {
-      console.error('Error generating speech:', error);
+  const handleTextToSpeech = (text: string) => {
+    if ('speechSynthesis' in window) {
+      // Stop any currently speaking synthesis
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      // Optionally, you can configure the voice, rate, pitch, etc.
+      // const voices = window.speechSynthesis.getVoices();
+      // utterance.voice = voices.find(v => v.name === 'Google US English') || voices[0];
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      console.warn('Browser does not support SpeechSynthesis.');
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to generate speech. You may have exceeded your API quota.',
+        title: 'TTS Not Supported',
+        description: 'Your browser does not support the Text-to-Speech feature.',
       });
     }
   };
@@ -106,7 +110,6 @@ export default function AgenticConversationPage() {
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
         />
-        <audio ref={audioRef} className="hidden" />
     </div>
   );
 }
