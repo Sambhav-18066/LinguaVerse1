@@ -1,3 +1,5 @@
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
@@ -7,45 +9,51 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
+  voiceOnly?: boolean;
 }
 
-export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading, voiceOnly = false }: ChatMessagesProps) {
   return (
     <>
-      {messages.map((message) => (
-        <div
-          key={message.id}
-          className={cn(
-            'flex items-start gap-4',
-            message.isAI ? 'justify-start' : 'justify-end'
-          )}
-        >
-          {message.isAI && (
-            <Avatar className="h-8 w-8 border">
-              <AvatarFallback>
-                <Bot className="h-5 w-5 text-primary" />
-              </AvatarFallback>
-            </Avatar>
-          )}
+      {messages.map((message) => {
+        if (voiceOnly && message.isAI) {
+          return null; // Don't render AI messages in voiceOnly mode
+        }
+        return (
           <div
+            key={message.id}
             className={cn(
-              'max-w-md rounded-xl px-4 py-3 text-sm shadow-md',
-              message.isAI
-                ? 'bg-card rounded-tl-none'
-                : 'bg-primary text-primary-foreground rounded-br-none'
+              'flex items-start gap-4',
+              message.isAI ? 'justify-start' : 'justify-end'
             )}
           >
-            <p>{message.text}</p>
+            {message.isAI && (
+              <Avatar className="h-8 w-8 border">
+                <AvatarFallback>
+                  <Bot className="h-5 w-5 text-primary" />
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <div
+              className={cn(
+                'max-w-md rounded-xl px-4 py-3 text-sm shadow-md',
+                message.isAI
+                  ? 'bg-card rounded-tl-none'
+                  : 'bg-primary text-primary-foreground rounded-br-none'
+              )}
+            >
+              <p>{message.text}</p>
+            </div>
+            {!message.isAI && (
+              <Avatar className="h-8 w-8 border">
+                <AvatarFallback>
+                  <User className="h-5 w-5" />
+                </AvatarFallback>
+              </Avatar>
+            )}
           </div>
-          {!message.isAI && (
-            <Avatar className="h-8 w-8 border">
-              <AvatarFallback>
-                <User className="h-5 w-5" />
-              </AvatarFallback>
-            </Avatar>
-          )}
-        </div>
-      ))}
+        );
+      })}
       {isLoading && (
         <div className="flex items-start gap-4 justify-start">
           <Avatar className="h-8 w-8 border">

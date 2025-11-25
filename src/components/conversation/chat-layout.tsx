@@ -35,7 +35,7 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
     <Card className="h-[calc(100vh-12rem)] w-full max-w-4xl mx-auto flex flex-col shadow-2xl rounded-xl">
       <div className="flex-grow overflow-hidden flex flex-col">
         <div className="flex-grow overflow-y-auto p-6 space-y-4">
-          <ChatMessages messages={messages} isLoading={isLoading} />
+          <ChatMessages messages={messages} isLoading={isLoading} voiceOnly={voiceOnly} />
         </div>
         <div className="border-t p-4 bg-background/80 rounded-b-xl">
           <ChatInput 
