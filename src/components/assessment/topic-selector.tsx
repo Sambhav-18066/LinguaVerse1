@@ -20,18 +20,31 @@ export function TopicSelector({ onTopicSelect }: TopicSelectorProps) {
     async function fetchTopics() {
       try {
         const { topics: fetchedTopics } = await generateConversationTopics({
-          interests: 'technology, travel, food, movies, personal growth',
+          interests: 'technology, travel, food, movies, personal growth, reducing anxiety, love',
           proficiencyLevel: 'Intermediate',
         });
-        setTopics(fetchedTopics);
-        if (fetchedTopics.length > 0) {
-          setSelectedTopic(fetchedTopics[0]);
+        const additionalTopics = [
+            "Reducing anxiety while speaking in English",
+            "Talk about the one you love"
+        ];
+        const allTopics = [...fetchedTopics, ...additionalTopics];
+        setTopics(allTopics);
+
+        if (allTopics.length > 0) {
+          setSelectedTopic(allTopics[0]);
         }
       } catch (error) {
         console.error("Failed to fetch topics", error);
         // Fallback topics
-        setTopics(['Technology', 'Travel', 'Food']);
-        setSelectedTopic('Technology');
+        const fallbackTopics = [
+            'Technology', 
+            'Travel', 
+            'Food',
+            "Reducing anxiety while speaking in English",
+            "Talk about the one you love"
+        ];
+        setTopics(fallbackTopics);
+        setSelectedTopic(fallbackTopics[0]);
       } finally {
         setIsLoading(false);
       }
