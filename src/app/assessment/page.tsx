@@ -13,6 +13,19 @@ import { Button } from '@/components/ui/button';
 import { FileText, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+const getGreeting = (topic: string) => {
+  const hour = new Date().getHours();
+  let timeOfDay;
+  if (hour < 12) {
+    timeOfDay = 'morning';
+  } else if (hour < 18) {
+    timeOfDay = 'afternoon';
+  } else {
+    timeOfDay = 'evening';
+  }
+  return `Good ${timeOfDay}. Greetings! My name is Amisha. Let's start the discussion on "${topic}". Tell me something about it.`;
+}
+
 export default function AssessmentPage() {
   const [assessmentResult, setAssessmentResult] = useState<SpeakingAssessmentResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +41,7 @@ export default function AssessmentPage() {
     setMessages([
       {
         id: '1',
-        text: `Great! Let's talk about ${topic}. Tell me something about it.`,
+        text: getGreeting(topic),
         timestamp: Date.now(),
         isAI: true,
         user: { id: 'ai', name: 'Amisha', avatarUrl: '' },

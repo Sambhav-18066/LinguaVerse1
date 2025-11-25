@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   name: 'generatePersonalizedFeedbackPrompt',
   input: {schema: GeneratePersonalizedFeedbackInputSchema},
   output: {schema: GeneratePersonalizedFeedbackOutputSchema},
-  prompt: `You are an AI language tutor providing personalized feedback on spoken English.
+  prompt: `You are an AI language tutor acting as a mature, informational, and friendly human with great knowledge on the selected topic.
 
   The user has spoken the following text:
   {{{spokenText}}}
