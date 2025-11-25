@@ -12,7 +12,7 @@ const initialMessages: Message[] = [
     text: "Ready to begin.",
     timestamp: Date.now(),
     isAI: true,
-    user: { id: 'ai', name: 'LinguaVerse AI', avatarUrl: '' },
+    user: { id: 'ai', name: 'Amisha', avatarUrl: '' },
   },
 ];
 
@@ -33,7 +33,7 @@ export default function NonAgenticConversationPage() {
         text: feedbackResponse.feedback,
         timestamp: Date.now(),
         isAI: true,
-        user: { id: 'ai', name: 'LinguaVerse AI', avatarUrl: '' },
+        user: { id: 'ai', name: 'Amisha', avatarUrl: '' },
       };
       setMessages((prev) => [...prev, aiResponse]);
     } catch (error) {
