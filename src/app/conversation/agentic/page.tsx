@@ -113,6 +113,7 @@ export default function AgenticConversationPage() {
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             isAudioPlaying={isPlaying}
+            voiceOnly={true}
         />
         <audio ref={el => {
             if (el && !audioRef.current) {

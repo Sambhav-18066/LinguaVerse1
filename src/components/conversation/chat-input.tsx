@@ -9,9 +9,10 @@ interface ChatInputProps {
   onSendMessage: (message: string, audioBlob?: Blob) => void;
   isLoading: boolean;
   isAudioPlaying?: boolean;
+  voiceOnly?: boolean;
 }
 
-export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly = false }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -148,33 +149,38 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInpu
   };
   
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn("flex items-center gap-2", voiceOnly && "justify-center")}>
       <Button
         variant="outline"
         size="icon"
         onClick={handleToggleRecord}
         className={cn(
           "h-10 w-10 flex-shrink-0",
-          isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          voiceOnly && "h-16 w-16 rounded-full"
         )}
         disabled={isLoading || isAudioPlaying}
       >
-        {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+        {isRecording ? <Square className={cn(voiceOnly && "h-6 w-6")} /> : <Mic className={cn(voiceOnly && "h-6 w-6")} />}
         <span className="sr-only">{isRecording ? "Stop recording" : "Start recording"}</span>
       </Button>
-      <Textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={isRecording ? "Listening..." : "Type your message or use the mic..."}
-        className="min-h-0 resize-none"
-        rows={1}
-        disabled={isLoading || isRecording}
-      />
-      <Button onClick={handleSendText} disabled={isLoading || isRecording || !message.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
-        <Send className="h-4 w-4" />
-        <span className="sr-only">Send message</span>
-      </Button>
+      {!voiceOnly && (
+        <>
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isRecording ? "Listening..." : "Type your message or use the mic..."}
+            className="min-h-0 resize-none"
+            rows={1}
+            disabled={isLoading || isRecording}
+          />
+          <Button onClick={handleSendText} disabled={isLoading || isRecording || !message.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
+            <Send className="h-4 w-4" />
+            <span className="sr-only">Send message</span>
+          </Button>
+        </>
+      )}
     </div>
   );
 }

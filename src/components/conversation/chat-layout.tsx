@@ -11,9 +11,10 @@ interface ChatLayoutProps {
   onSendMessage: (message: string, audioBlob?: Blob) => Promise<void>;
   isLoading: boolean;
   isAudioPlaying?: boolean;
+  voiceOnly?: boolean;
 }
 
-export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isAudioPlaying }: ChatLayoutProps) {
+export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isAudioPlaying, voiceOnly = false }: ChatLayoutProps) {
   
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     if (!messageText.trim()) return;
@@ -41,6 +42,7 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
             onSendMessage={handleSendMessage} 
             isLoading={isLoading} 
             isAudioPlaying={isAudioPlaying}
+            voiceOnly={voiceOnly}
             />
         </div>
       </div>
