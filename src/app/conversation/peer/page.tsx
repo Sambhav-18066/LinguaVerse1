@@ -34,8 +34,8 @@ export default function PeerConversationPage() {
     chatLayoutRef.current?.startRecording();
   }, []);
 
-  const handleTextToSpeech = useCallback(async (text: string) => {
-    if (isAiMuted) {
+  const handleTextToSpeech = useCallback(async (text: string, muted: boolean) => {
+    if (muted) {
       if (!isRecording) handleStartRecording();
       return;
     }
@@ -57,7 +57,7 @@ export default function PeerConversationPage() {
       });
       if (!isRecording) handleStartRecording();
     }
-  }, [isAiMuted, isRecording, handleStartRecording, toast]);
+  }, [isRecording, handleStartRecording, toast]);
 
   useEffect(() => {
     const audioEl = audioRef.current;
@@ -88,7 +88,7 @@ export default function PeerConversationPage() {
   
     // Initial message
     if (messages.length === 1 && messages[0].isAI) {
-      handleTextToSpeech(messages[0].text);
+      handleTextToSpeech(messages[0].text, isAiMuted);
     }
   
     return () => {
@@ -96,13 +96,13 @@ export default function PeerConversationPage() {
       audioEl.removeEventListener('ended', onEnded);
       audioEl.removeEventListener('error', onError);
     };
-  }, [toast, isRecording, handleStartRecording, messages, handleTextToSpeech]);
+  }, [toast, isRecording, handleStartRecording, messages, handleTextToSpeech, isAiMuted]);
 
 
   // Simulate a peer's response using the AI
   const handleSendMessage = async (messageText: string) => {
     setIsLoading(true);
-    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User', avatarUrl: '' } }];
+    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User' } }];
     setMessages(newMessages);
     
     try {
@@ -121,7 +121,7 @@ export default function PeerConversationPage() {
       };
       
       setMessages((prev) => [...prev, peerResponse]);
-      await handleTextToSpeech(peerResponse.text);
+      await handleTextToSpeech(peerResponse.text, isAiMuted);
 
     } catch (error) {
        console.error('Error generating peer response:', error);
@@ -136,17 +136,16 @@ export default function PeerConversationPage() {
   };
 
   const handleToggleMute = () => {
-    setIsAiMuted(prev => {
-      if (!prev && audioRef.current) {
+    const newMutedState = !isAiMuted;
+    setIsAiMuted(newMutedState);
+    if (newMutedState && audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
         setIsAudioPlaying(false);
         if (!isRecording) {
             handleStartRecording();
         }
-      }
-      return !prev;
-    });
+    }
   }
 
   return (

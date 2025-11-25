@@ -34,8 +34,8 @@ export default function NonAgenticConversationPage() {
     chatLayoutRef.current?.startRecording();
   }, []);
 
-  const handleTextToSpeech = useCallback(async (text: string) => {
-    if (isAiMuted) {
+  const handleTextToSpeech = useCallback(async (text: string, muted: boolean) => {
+    if (muted) {
       if (!isRecording) handleStartRecording();
       return;
     }
@@ -57,7 +57,7 @@ export default function NonAgenticConversationPage() {
       });
       if (!isRecording) handleStartRecording();
     }
-  }, [isAiMuted, isRecording, handleStartRecording, toast]);
+  }, [isRecording, handleStartRecording, toast]);
 
   useEffect(() => {
     const audioEl = audioRef.current;
@@ -88,7 +88,7 @@ export default function NonAgenticConversationPage() {
   
     // Initial message
     if (messages.length === 1 && messages[0].isAI) {
-      handleTextToSpeech(messages[0].text);
+      handleTextToSpeech(messages[0].text, isAiMuted);
     }
   
     return () => {
@@ -96,12 +96,12 @@ export default function NonAgenticConversationPage() {
       audioEl.removeEventListener('ended', onEnded);
       audioEl.removeEventListener('error', onError);
     };
-  }, [toast, isRecording, handleStartRecording, messages, handleTextToSpeech]);
+  }, [toast, isRecording, handleStartRecording, messages, handleTextToSpeech, isAiMuted]);
 
   
   const handleSendMessage = async (messageText: string) => {
     setIsLoading(true);
-    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User', avatarUrl: '' } }];
+    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User' } }];
     setMessages(newMessages);
 
     try {
@@ -121,7 +121,7 @@ export default function NonAgenticConversationPage() {
         user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
       };
       setMessages((prev) => [...prev, aiResponse]);
-      await handleTextToSpeech(aiResponse.text);
+      await handleTextToSpeech(aiResponse.text, isAiMuted);
 
     } catch (error) {
       console.error('Error generating response:', error);
@@ -136,17 +136,16 @@ export default function NonAgenticConversationPage() {
   };
 
   const handleToggleMute = () => {
-    setIsAiMuted(prev => {
-      if (!prev && audioRef.current) {
+    const newMutedState = !isAiMuted;
+    setIsAiMuted(newMutedState);
+    if (newMutedState && audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
         setIsAudioPlaying(false);
         if (!isRecording) {
             handleStartRecording();
         }
-      }
-      return !prev;
-    });
+    }
   }
 
   return (

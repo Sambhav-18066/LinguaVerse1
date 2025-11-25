@@ -34,8 +34,8 @@ export default function AssessmentPage() {
     chatLayoutRef.current?.startRecording();
   }, []);
 
-  const handleTextToSpeech = useCallback(async (text: string) => {
-    if (isAiMuted) {
+  const handleTextToSpeech = useCallback(async (text: string, muted: boolean) => {
+    if (muted) {
       if (!isRecording) handleStartRecording();
       return;
     }
@@ -57,7 +57,7 @@ export default function AssessmentPage() {
       });
       if (!isRecording) handleStartRecording();
     }
-  }, [isAiMuted, isRecording, handleStartRecording, toast]);
+  }, [isRecording, handleStartRecording, toast]);
 
   useEffect(() => {
     const audioEl = audioRef.current;
@@ -108,12 +108,12 @@ export default function AssessmentPage() {
     setConversationStarted(true);
     setAssessmentResult(null);
     audioChunksRef.current = [];
-    await handleTextToSpeech(initialText);
+    await handleTextToSpeech(initialText, isAiMuted);
   };
 
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     setIsLoading(true);
-    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User', avatarUrl: '' } }];
+    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User' } }];
     setMessages(newMessages);
 
     if (audioBlob) {
@@ -134,7 +134,7 @@ export default function AssessmentPage() {
         user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
       };
       setMessages((prev) => [...prev, aiResponse]);
-      await handleTextToSpeech(aiResponse.text);
+      await handleTextToSpeech(aiResponse.text, isAiMuted);
 
     } catch (error) {
       console.error('Error generating response:', error);
@@ -198,17 +198,16 @@ export default function AssessmentPage() {
   };
 
   const handleToggleMute = () => {
-    setIsAiMuted(prev => {
-      if (!prev && audioRef.current) {
+    const newMutedState = !isAiMuted;
+    setIsAiMuted(newMutedState);
+    if (newMutedState && audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
         setIsAudioPlaying(false);
         if (!isRecording) {
             handleStartRecording();
         }
-      }
-      return !prev;
-    });
+    }
   }
 
   if (isAnalyzing) {

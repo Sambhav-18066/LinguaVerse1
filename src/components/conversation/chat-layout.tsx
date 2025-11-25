@@ -57,7 +57,7 @@ export const ChatLayout = forwardRef<ChatLayoutRef, ChatLayoutProps>(
                     isAiTurn && "border-primary",
                     isRecording && !isAudioPlaying && "border-destructive animate-pulse"
                 )}>
-                    <AvatarImage src={isAiTurn ? aiAvatarUrl : ''} />
+                    <AvatarImage src={isAiTurn ? aiAvatarUrl : undefined} />
                     <AvatarFallback className="text-muted-foreground bg-transparent">
                     {isAiTurn ? <Bot className="h-12 w-12" /> : <User className="h-12 w-12" />}
                     </AvatarFallback>
