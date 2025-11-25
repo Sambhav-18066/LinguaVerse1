@@ -46,7 +46,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
   };
 
   const startRecording = async () => {
-    if (isRecording || !recognitionRef.current) {
+    if (isRecording || !recognitionRef.current || mediaRecorderRef.current?.state === 'recording') {
         return;
     };
     
@@ -107,14 +107,23 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
       recognition.lang = 'en-US';
       
       recognition.onend = () => {
-        if (isRecording) {
-            // It can stop for various reasons, if we are still in recording mode, restart it.
-            recognition.start();
+        // Only restart if we are still in recording mode.
+        // This check is crucial to prevent restarting after an intentional stop.
+        if (isRecording) { 
+           if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+              recognition.start();
+           } else {
+             onRecordingChange(false);
+           }
         }
       };
 
       recognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
+        if (event.error === 'no-speech' && isRecording) {
+            // Let it timeout and be handled by onend
+            return
+        }
         if (isRecording) {
             onRecordingChange(false);
         }
