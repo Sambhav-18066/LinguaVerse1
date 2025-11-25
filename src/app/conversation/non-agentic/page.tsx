@@ -25,12 +25,11 @@ export default function NonAgenticConversationPage() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.isAI && lastMessage.text) {
-      handleTextToSpeech(lastMessage.text);
+    if (messages.length > 0 && messages[messages.length - 1].isAI && messages[messages.length - 1].text) {
+      handleTextToSpeech(messages[messages.length - 1].text);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages]);
+  }, [messages.length > 0 && messages[messages.length - 1].isAI ? messages[messages.length - 1].id : '']);
 
 
   const handleTextToSpeech = async (text: string) => {
