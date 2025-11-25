@@ -18,6 +18,7 @@ import {
   Users,
   BrainCircuit,
   ChevronDown,
+  HelpCircle,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -58,6 +59,11 @@ const menuItems = [
     href: '/assessment',
     label: 'Assessment',
     icon: FileText,
+  },
+  {
+    href: '/how-to-use',
+    label: 'How to Use',
+    icon: HelpCircle,
   },
   {
     href: '/researcher',
