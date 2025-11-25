@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChatLayout } from '@/components/conversation/chat-layout';
 import type { Message } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 const initialMessages: Message[] = [
   {
@@ -10,7 +11,7 @@ const initialMessages: Message[] = [
     text: "Hey! I'm another learner, just like you. Let's practice together. What do you want to talk about?",
     timestamp: Date.now(),
     isAI: true, // For styling purposes, the 'peer' is treated as the other party in the chat
-    user: { id: 'peer', name: 'Alex', avatarUrl: '' },
+    user: { id: 'peer', name: 'Alex', avatarUrl: 'https://picsum.photos/seed/2/100/100' },
   },
 ];
 
@@ -19,6 +20,7 @@ export default function PeerConversationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const {toast} = useToast();
 
   // Mock peer response
   const handleSendMessage = async (messageText: string) => {
@@ -32,8 +34,24 @@ export default function PeerConversationPage() {
       text: `That's interesting! Tell me more about that. (This is a mock response, in a real app another user would reply)`,
       timestamp: Date.now(),
       isAI: true, // treat as 'other' for styling
-      user: { id: 'peer', name: 'Alex', avatarUrl: '' },
+      user: { id: 'peer', name: 'Alex', avatarUrl: 'https://picsum.photos/seed/2/100/100' },
     };
+
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(peerResponse.text);
+      utterance.onend = () => {
+        setIsAudioPlaying(false);
+      };
+      setIsAudioPlaying(true);
+      window.speechSynthesis.speak(utterance);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "TTS Not Supported",
+        description: "Your browser doesn't support text-to-speech."
+      })
+    }
+    
     setMessages((prev) => [...prev, peerResponse]);
 
     setIsLoading(false);
