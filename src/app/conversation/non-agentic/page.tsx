@@ -30,7 +30,7 @@ export default function NonAgenticConversationPage() {
       handleTextToSpeech(lastMessage.text);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, messages[messages.length - 1]?.id]);
+  }, [messages]);
 
 
   const handleTextToSpeech = async (text: string) => {
