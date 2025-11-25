@@ -46,7 +46,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
   };
 
   const startRecording = async () => {
-    if (!recognitionRef.current || isRecording) {
+    if (isRecording || !recognitionRef.current) {
         return;
     };
     
@@ -125,6 +125,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
 
     return () => {
         if (recognitionRef.current) {
+            recognitionRef.current.onend = null;
             recognitionRef.current.stop();
         }
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
