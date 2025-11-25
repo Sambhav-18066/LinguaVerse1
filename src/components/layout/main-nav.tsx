@@ -1,0 +1,136 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import {
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+} from '@/components/ui/sidebar';
+import {
+  LayoutDashboard,
+  MessageCircle,
+  FileText,
+  FlaskConical,
+  Bot,
+  Users,
+  BrainCircuit,
+  ChevronDown,
+} from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+import React from 'react';
+
+const menuItems = [
+  {
+    href: '/',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+  },
+  {
+    label: 'Conversation',
+    icon: MessageCircle,
+    subItems: [
+      {
+        href: '/conversation/agentic',
+        label: 'Agentic AI',
+        icon: BrainCircuit,
+      },
+      {
+        href: '/conversation/non-agentic',
+        label: 'Non-Agentic AI',
+        icon: Bot,
+      },
+      {
+        href: '/conversation/peer',
+        label: 'Peer-to-Peer',
+        icon: Users,
+      },
+    ],
+  },
+  {
+    href: '/assessment',
+    label: 'Assessment',
+    icon: FileText,
+  },
+  {
+    href: '/researcher',
+    label: 'Researcher Panel',
+    icon: FlaskConical,
+  },
+];
+
+export function MainNav() {
+  const pathname = usePathname();
+  const [isConversationOpen, setIsConversationOpen] = React.useState(
+    pathname.startsWith('/conversation')
+  );
+
+  return (
+    <nav className="p-2">
+      <SidebarMenu>
+        {menuItems.map((item, index) =>
+          item.subItems ? (
+            <Collapsible key={index} open={isConversationOpen} onOpenChange={setIsConversationOpen}>
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      variant="default"
+                      className="justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </div>
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 transition-transform',
+                          isConversationOpen && 'rotate-180'
+                        )}
+                      />
+                    </SidebarMenuButton>
+                </CollapsibleTrigger>
+              </SidebarMenuItem>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {item.subItems.map((subItem) => (
+                    <SidebarMenuItem key={subItem.href}>
+                      <Link href={subItem.href} passHref legacyBehavior>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === subItem.href}
+                        >
+                          <a>
+                            <subItem.icon className="h-4 w-4" />
+                            <span>{subItem.label}</span>
+                          </a>
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </Collapsible>
+          ) : (
+            <SidebarMenuItem key={item.href}>
+              <Link href={item.href} legacyBehavior passHref>
+                <SidebarMenuButton asChild isActive={pathname === item.href}>
+                  <a>
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </a>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          )
+        )}
+      </SidebarMenu>
+    </nav>
+  );
+}
