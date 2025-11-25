@@ -26,11 +26,13 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const isRecognitionActive = useRef(false);
 
   const stopRecording = (finalTranscript: string) => {
-    if (recognitionRef.current) {
+    if (recognitionRef.current && isRecognitionActive.current) {
       recognitionRef.current.onresult = null; // Prevent race conditions
       recognitionRef.current.stop();
+      isRecognitionActive.current = false;
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
         mediaRecorderRef.current.stop();
@@ -46,7 +48,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
   };
 
   const startRecording = async () => {
-    if (isRecording || mediaRecorderRef.current?.state === 'recording') {
+    if (isRecording || mediaRecorderRef.current?.state === 'recording' || isRecognitionActive.current) {
         return;
     };
     
@@ -84,6 +86,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
 
             mediaRecorder.start();
             recognitionRef.current.start();
+            isRecognitionActive.current = true;
             onRecordingChange(true);
             setMessage('');
             audioChunksRef.current = [];
@@ -110,26 +113,22 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
       recognition.lang = 'en-US';
       
       recognition.onend = () => {
-        // Only restart if we are still in recording mode.
-        // This check is crucial to prevent restarting after an intentional stop.
-        if (isRecording) { 
-           if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-              recognition.start();
-           } else {
-             onRecordingChange(false);
-           }
+        isRecognitionActive.current = false;
+        // Only turn off the visual recording indicator if the recorder has also stopped.
+        // This prevents the UI from flickering if recognition ends but the media recorder is still going.
+        if (mediaRecorderRef.current?.state !== 'recording' && isRecording) {
+          onRecordingChange(false);
         }
       };
 
       recognition.onerror = (event) => {
         if (event.error === 'no-speech') {
-            // This is a common occurrence and not a critical error.
-            // We can let the `onend` event handle the timeout and restart.
+            // This is a common occurrence, not a critical error. Let it be handled by onend.
             return;
         }
         
         console.error('Speech recognition error', event.error);
-        
+        isRecognitionActive.current = false;
         if (isRecording) {
             onRecordingChange(false);
         }
@@ -140,8 +139,12 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
 
     return () => {
         if (recognitionRef.current) {
+            recognitionRef.current.onresult = null;
             recognitionRef.current.onend = null;
-            recognitionRef.current.stop();
+            recognitionRef.current.onerror = null;
+            if (isRecognitionActive.current) {
+                recognitionRef.current.stop();
+            }
         }
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
             mediaRecorderRef.current.stop();
