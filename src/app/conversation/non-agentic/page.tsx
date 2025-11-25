@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { ChatLayout } from '@/components/conversation/chat-layout';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { ChatLayout, type ChatLayoutRef } from '@/components/conversation/chat-layout';
 import type { Message } from '@/lib/types';
 import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-feedback';
 import { useToast } from '@/hooks/use-toast';
@@ -22,16 +22,13 @@ export default function NonAgenticConversationPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const { toast } = useToast();
+  const chatLayoutRef = useRef<ChatLayoutRef>(null);
 
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.isAI) {
-      handleTextToSpeech(lastMessage.text);
-    }
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages]);
+  const handleStartRecording = useCallback(() => {
+    chatLayoutRef.current?.startRecording();
+  }, []);
 
-  const handleTextToSpeech = (text: string) => {
+  const handleTextToSpeech = useCallback((text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
@@ -39,8 +36,18 @@ export default function NonAgenticConversationPage() {
       utterance.pitch = 1;
 
       utterance.onstart = () => setIsAudioPlaying(true);
-      utterance.onend = () => setIsAudioPlaying(false);
-      utterance.onerror = () => setIsAudioPlaying(false);
+      utterance.onend = () => {
+        setIsAudioPlaying(false);
+        if (!isRecording) {
+            handleStartRecording();
+        }
+      };
+      utterance.onerror = () => {
+        setIsAudioPlaying(false);
+        if (!isRecording) {
+            handleStartRecording();
+        }
+      };
 
       window.speechSynthesis.speak(utterance);
     } else {
@@ -50,8 +57,20 @@ export default function NonAgenticConversationPage() {
         title: 'TTS Not Supported',
         description: 'Your browser does not support the Text-to-Speech feature.',
       });
+      if (!isRecording) {
+        handleStartRecording();
+      }
     }
-  };
+  }, [toast, isRecording, handleStartRecording]);
+
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.isAI) {
+      handleTextToSpeech(lastMessage.text);
+    }
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
   
   const handleSendMessage = async (messageText: string) => {
     setIsLoading(true);
@@ -87,6 +106,7 @@ export default function NonAgenticConversationPage() {
             <p className="text-muted-foreground">Practice with a purely reactive AI.</p>
         </div>
         <ChatLayout
+            ref={chatLayoutRef}
             messages={messages}
             setMessages={setMessages}
             onSendMessage={handleSendMessage}

@@ -1,7 +1,7 @@
 'use client';
-import type { Dispatch, type SetStateAction } from 'react';
+import { type Dispatch, type SetStateAction, useImperativeHandle, forwardRef, useRef } from 'react';
 import type { Message } from '@/lib/types';
-import { ChatInput } from './chat-input';
+import { ChatInput, type ChatInputRef } from './chat-input';
 import { Card } from '@/components/ui/card';
 import { Bot, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,8 +18,21 @@ interface ChatLayoutProps {
   isAudioPlaying: boolean;
 }
 
-export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isRecording, onRecordingChange, isAudioPlaying }: ChatLayoutProps) {
+export interface ChatLayoutRef {
+  startRecording: () => void;
+}
+
+export const ChatLayout = forwardRef<ChatLayoutRef, ChatLayoutProps>(
+  ({ messages, setMessages, onSendMessage, isLoading, isRecording, onRecordingChange, isAudioPlaying }, ref) => {
   
+  const chatInputRef = useRef<ChatInputRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    startRecording: () => {
+      chatInputRef.current?.startRecording();
+    }
+  }));
+
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     if (!messageText.trim()) return;
 
@@ -37,7 +50,7 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
 
   const lastMessage = messages[messages.length - 1];
   const isAiTurn = lastMessage?.isAI || isLoading;
-  const aiAvatarUrl = lastMessage?.isAI ? lastMessage.user.avatarUrl : '/amisha-avatar.png';
+  const aiAvatarUrl = lastMessage?.user?.avatarUrl;
 
   return (
     <Card className="h-[calc(100vh-12rem)] w-full max-w-4xl mx-auto flex flex-col shadow-2xl rounded-xl">
@@ -70,6 +83,7 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
       </div>
       <div className="border-t p-4 bg-background/80 rounded-b-xl">
         <ChatInput 
+            ref={chatInputRef}
             onSendMessage={handleSendMessage} 
             isLoading={isLoading} 
             isAudioPlaying={isAudioPlaying} 
@@ -80,4 +94,6 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
       </div>
     </Card>
   );
-}
+});
+
+ChatLayout.displayName = "ChatLayout";
