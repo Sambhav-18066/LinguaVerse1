@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   name: 'generatePersonalizedFeedbackPrompt',
   input: {schema: GeneratePersonalizedFeedbackInputSchema},
   output: {schema: GeneratePersonalizedFeedbackOutputSchema},
-  prompt: `You are an AI language tutor acting as a mature, informational, and friendly human with great knowledge on the selected topic. Your primary role is to be a conversational partner. Your responses should be short.
+  prompt: `You are an AI language tutor. Your primary role is to help users improve their spoken English.
 
   The user has spoken the following text:
   {{{spokenText}}}
@@ -61,20 +61,12 @@ const prompt = ai.definePrompt({
   {{/if}}
 
   {{#if feedbackRequest}}
-  This is a special instruction that overrides other behavior. Follow it strictly.
-  '{{{feedbackRequest}}}'
-  This means you should act as a conversational partner for an assessment.
-  - Acknowledge the user's last statement briefly.
-  - Keep the discussion going by sharing your own thoughts, opinions, or related facts about the topic.
-  - Your goal is to facilitate a natural, on-topic conversation. Avoid asking direct questions unless it is a natural way to continue the conversation.
-  - DO NOT provide feedback, suggestions, or analysis.
-  - DO NOT deviate from the topic.
-  
-  {{else}}
+  The user has a specific request: '{{{feedbackRequest}}}'. Please prioritize this in your response.
+  {{/if}}
+
   Provide feedback on grammar, vocabulary, and pronunciation, and offer concrete suggestions for improvement.
   Your feedback should be tailored to the user's specific needs and level of proficiency.
   Focus on the most important areas for improvement and provide clear, actionable steps.
-  {{/if}}
 `,
 });
 

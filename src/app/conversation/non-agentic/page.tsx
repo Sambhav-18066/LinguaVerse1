@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChatLayout } from '@/components/conversation/chat-layout';
 import type { Message } from '@/lib/types';
 import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-feedback';
@@ -22,16 +22,20 @@ export default function NonAgenticConversationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
 
+  useEffect(() => {
+    if (messages[messages.length - 1]?.isAI) {
+      handleTextToSpeech(messages[messages.length - 1].text);
+    }
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   const handleTextToSpeech = async (text: string) => {
     try {
-      setIsPlaying(true);
       const { audioDataUri } = await textToSpeech({ text });
       if (audioRef.current) {
         audioRef.current.src = audioDataUri;
-        audioRef.current.play().catch(e => console.error("Playback failed", e));
+        audioRef.current.play();
       }
     } catch (error) {
       console.error('Error generating speech:', error);
@@ -40,7 +44,6 @@ export default function NonAgenticConversationPage() {
         title: 'Error',
         description: 'Failed to generate speech. You may have exceeded your API quota.',
       });
-      setIsPlaying(false);
     }
   };
   
@@ -71,19 +74,6 @@ export default function NonAgenticConversationPage() {
     }
   };
 
-  const handleAudioPlayback = (audio: HTMLAudioElement) => {
-      audio.onplay = () => setIsPlaying(true);
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => {
-        setIsPlaying(false);
-        toast({
-            variant: 'destructive',
-            title: 'Audio Playback Error',
-            description: 'Could not play the generated audio.',
-        });
-      };
-  };
-
   return (
     <div>
         <div className="text-center mb-6">
@@ -95,15 +85,8 @@ export default function NonAgenticConversationPage() {
             setMessages={setMessages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
-            isAudioPlaying={isPlaying}
-            onPlayAudio={handleTextToSpeech}
         />
-        <audio ref={el => {
-            if (el && !audioRef.current) {
-                audioRef.current = el;
-                handleAudioPlayback(el);
-            }
-        }} className="hidden" />
+        <audio ref={audioRef} className="hidden" />
     </div>
   );
 }

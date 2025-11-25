@@ -108,8 +108,9 @@ export function MainNav() {
                 <SidebarMenuSub>
                   {item.subItems.map((subItem) => (
                     <SidebarMenuItem key={subItem.href}>
-                      <Link href={subItem.href} asChild>
+                      <Link href={subItem.href} passHref legacyBehavior>
                         <SidebarMenuSubButton
+                          asChild
                           isActive={pathname === subItem.href}
                         >
                           <>
@@ -125,8 +126,8 @@ export function MainNav() {
             </Collapsible>
           ) : (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} asChild>
-                <SidebarMenuButton isActive={pathname === item.href}>
+              <Link href={item.href} passHref legacyBehavior>
+                <SidebarMenuButton asChild isActive={pathname === item.href}>
                   <>
                     <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
