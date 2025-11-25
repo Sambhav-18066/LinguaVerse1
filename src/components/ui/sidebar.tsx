@@ -707,14 +707,14 @@ const SidebarMenuSubItem = React.forwardRef<
 SidebarMenuSubItem.displayName = 'SidebarMenuSubItem';
 
 const SidebarMenuSubButton = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentProps<'button'> & {
+  HTMLAnchorElement,
+  React.ComponentProps<'a'> & {
     asChild?: boolean;
     size?: 'sm' | 'md';
     isActive?: boolean;
   }
 >(({asChild = false, size = 'md', isActive, className, ...props}, ref) => {
-  const Comp = asChild ? Slot : 'button';
+  const Comp = asChild ? Slot : 'a';
   return (
     <Comp
       ref={ref}
