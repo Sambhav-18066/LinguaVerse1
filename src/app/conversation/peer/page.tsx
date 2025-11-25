@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { ChatLayout } from '@/components/conversation/chat-layout';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { ChatLayout, type ChatLayoutRef } from '@/components/conversation/chat-layout';
 import type { Message } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-feedback';
 
 const initialMessages: Message[] = [
   {
@@ -21,40 +22,85 @@ export default function PeerConversationPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const {toast} = useToast();
+  const chatLayoutRef = useRef<ChatLayoutRef>(null);
 
-  // Mock peer response
-  const handleSendMessage = async (messageText: string) => {
-    setIsLoading(true);
-    
-    // Simulate network delay and peer typing time
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
-    
-    const peerResponse: Message = {
-      id: Date.now().toString(),
-      text: `That's interesting! Tell me more about that. (This is a mock response, in a real app another user would reply)`,
-      timestamp: Date.now(),
-      isAI: true, // treat as 'other' for styling
-      user: { id: 'peer', name: 'Alex', avatarUrl: 'https://picsum.photos/seed/2/100/100' },
-    };
+  const handleStartRecording = useCallback(() => {
+    chatLayoutRef.current?.startRecording();
+  }, []);
 
+  const handleTextToSpeech = useCallback((text: string) => {
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(peerResponse.text);
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1;
+      utterance.pitch = 1;
+
+      utterance.onstart = () => setIsAudioPlaying(true);
       utterance.onend = () => {
         setIsAudioPlaying(false);
+        if (!isRecording) {
+            handleStartRecording();
+        }
       };
-      setIsAudioPlaying(true);
+      utterance.onerror = () => {
+        setIsAudioPlaying(false);
+        if (!isRecording) {
+            handleStartRecording();
+        }
+      };
+
       window.speechSynthesis.speak(utterance);
     } else {
       toast({
-        variant: "destructive",
-        title: "TTS Not Supported",
-        description: "Your browser doesn't support text-to-speech."
-      })
+        variant: 'destructive',
+        title: 'TTS Not Supported',
+        description: 'Your browser does not support the Text-to-Speech feature.',
+      });
+      if (!isRecording) {
+        handleStartRecording();
+      }
     }
-    
-    setMessages((prev) => [...prev, peerResponse]);
+  }, [toast, isRecording, handleStartRecording]);
 
-    setIsLoading(false);
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.isAI) {
+      handleTextToSpeech(lastMessage.text);
+    }
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
+
+  // Simulate a peer's response using the AI
+  const handleSendMessage = async (messageText: string) => {
+    setIsLoading(true);
+    
+    try {
+      const peerResponseText = await generatePersonalizedFeedback({
+        spokenText: messageText,
+        feedbackRequest: "Respond as 'Alex', another English language learner. Keep your response casual, friendly, and short. Ask a follow-up question."
+      });
+
+      const peerResponse: Message = {
+        id: Date.now().toString(),
+        text: peerResponseText.feedback,
+        timestamp: Date.now(),
+        isAI: true, // treat as 'other' for styling
+        user: { id: 'peer', name: 'Alex', avatarUrl: 'https://picsum.photos/seed/2/100/100' },
+      };
+      
+      setMessages((prev) => [...prev, peerResponse]);
+
+    } catch (error) {
+       console.error('Error generating peer response:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to get a response from the AI peer.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -64,6 +110,7 @@ export default function PeerConversationPage() {
             <p className="text-muted-foreground">Practice your English with another learner.</p>
         </div>
         <ChatLayout
+            ref={chatLayoutRef}
             messages={messages}
             setMessages={setMessages}
             onSendMessage={handleSendMessage}
