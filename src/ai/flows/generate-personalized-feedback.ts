@@ -48,6 +48,7 @@ const prompt = ai.definePrompt({
   IMPORTANT:
   - Keep your responses very short and to the point (1-2 sentences).
   - Your tone should be encouraging and friendly, like talking to a friend.
+  - If the user asks a question or needs information, provide a helpful and direct answer before asking a follow-up question.
   - Ask engaging follow-up questions to keep the conversation flowing.
   - Do not act like a formal tutor unless specifically asked.
 
