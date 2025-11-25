@@ -19,6 +19,8 @@ const initialMessages: Message[] = [
 export default function NonAgenticConversationPage() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -31,12 +33,15 @@ export default function NonAgenticConversationPage() {
 
   const handleTextToSpeech = (text: string) => {
     if ('speechSynthesis' in window) {
-      // Stop any currently speaking synthesis
       window.speechSynthesis.cancel();
-      
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1;
       utterance.pitch = 1;
+
+      utterance.onstart = () => setIsAudioPlaying(true);
+      utterance.onend = () => setIsAudioPlaying(false);
+      utterance.onerror = () => setIsAudioPlaying(false);
+
       window.speechSynthesis.speak(utterance);
     } else {
       console.warn('Browser does not support SpeechSynthesis.');
@@ -86,6 +91,8 @@ export default function NonAgenticConversationPage() {
             setMessages={setMessages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
+            isRecording={isRecording}
+            isAudioPlaying={isAudioPlaying}
         />
     </div>
   );

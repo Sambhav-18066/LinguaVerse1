@@ -4,15 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Mic, Send, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface ChatInputProps {
   onSendMessage: (message: string, audioBlob?: Blob) => void;
   isLoading: boolean;
   isAudioPlaying?: boolean;
   voiceOnly?: boolean;
+  onRecordingChange: (isRecording: boolean) => void;
 }
 
-export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly = false }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly = false, onRecordingChange }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -52,6 +54,7 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly 
       recognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
         setIsRecording(false);
+        onRecordingChange(false);
       }
 
       recognitionRef.current = recognition;
@@ -101,6 +104,7 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly 
         mediaRecorder.start();
         recognitionRef.current.start();
         setIsRecording(true);
+        onRecordingChange(true);
         setMessage('');
         audioChunksRef.current = [];
 
@@ -118,6 +122,7 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly 
     }
     
     setIsRecording(false);
+    onRecordingChange(false);
     
     if (finalTranscript.trim()) {
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
@@ -150,20 +155,25 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly 
   
   return (
     <div className={cn("flex items-center gap-2", voiceOnly && "justify-center")}>
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={handleToggleRecord}
-        className={cn(
-          "h-10 w-10 flex-shrink-0",
-          isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-          voiceOnly && "h-16 w-16 rounded-full"
-        )}
-        disabled={isLoading || isAudioPlaying}
+      <motion.div
+        animate={{ scale: isRecording ? 1.1 : 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 10 }}
       >
-        {isRecording ? <Square className={cn(voiceOnly && "h-6 w-6")} /> : <Mic className={cn(voiceOnly && "h-6 w-6")} />}
-        <span className="sr-only">{isRecording ? "Stop recording" : "Start recording"}</span>
-      </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleToggleRecord}
+          className={cn(
+            "h-10 w-10 flex-shrink-0 transition-colors duration-300",
+            isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+            voiceOnly && "h-20 w-20 rounded-full shadow-lg"
+          )}
+          disabled={isLoading || isAudioPlaying}
+        >
+          {isRecording ? <Square className={cn(voiceOnly && "h-8 w-8")} /> : <Mic className={cn(voiceOnly && "h-8 w-8")} />}
+          <span className="sr-only">{isRecording ? "Stop recording" : "Start recording"}</span>
+        </Button>
+      </motion.div>
       {!voiceOnly && (
         <>
           <Textarea

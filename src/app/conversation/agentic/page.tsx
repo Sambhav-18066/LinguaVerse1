@@ -20,6 +20,8 @@ const initialMessages: Message[] = [
 export default function AgenticConversationPage() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,15 +34,15 @@ export default function AgenticConversationPage() {
 
   const handleTextToSpeech = (text: string) => {
     if ('speechSynthesis' in window) {
-      // Stop any currently speaking synthesis
       window.speechSynthesis.cancel();
-
       const utterance = new SpeechSynthesisUtterance(text);
-      // Optionally, you can configure the voice, rate, pitch, etc.
-      // const voices = window.speechSynthesis.getVoices();
-      // utterance.voice = voices.find(v => v.name === 'Google US English') || voices[0];
       utterance.rate = 1;
       utterance.pitch = 1;
+      
+      utterance.onstart = () => setIsAudioPlaying(true);
+      utterance.onend = () => setIsAudioPlaying(false);
+      utterance.onerror = () => setIsAudioPlaying(false);
+
       window.speechSynthesis.speak(utterance);
     } else {
       console.warn('Browser does not support SpeechSynthesis.');
@@ -109,6 +111,8 @@ export default function AgenticConversationPage() {
             setMessages={setMessages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
+            isRecording={isRecording}
+            isAudioPlaying={isAudioPlaying}
         />
     </div>
   );

@@ -20,6 +20,8 @@ export default function AssessmentPage() {
   const [conversationStarted, setConversationStarted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedTopic, setSelectedTopic] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
 
@@ -146,6 +148,8 @@ export default function AssessmentPage() {
               setMessages={setMessages}
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
+              isRecording={isRecording}
+              isAudioPlaying={isAudioPlaying}
           />
         </div>
         <div className="flex justify-center py-4">
