@@ -11,10 +11,11 @@ interface ChatLayoutProps {
   onSendMessage: (message: string, audioBlob?: Blob) => Promise<void>;
   isLoading: boolean;
   isAudioPlaying?: boolean;
+  onPlayAudio?: (text: string) => void;
   voiceOnly?: boolean;
 }
 
-export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isAudioPlaying, voiceOnly = false }: ChatLayoutProps) {
+export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isAudioPlaying, onPlayAudio, voiceOnly = false }: ChatLayoutProps) {
   
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     if (!messageText.trim()) return;
@@ -35,7 +36,7 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
     <Card className="h-[calc(100vh-12rem)] w-full max-w-4xl mx-auto flex flex-col shadow-2xl rounded-xl">
       <div className="flex-grow overflow-hidden flex flex-col">
         <div className="flex-grow overflow-y-auto p-6 space-y-4">
-          <ChatMessages messages={messages} isLoading={isLoading} voiceOnly={voiceOnly} />
+          <ChatMessages messages={messages} isLoading={isLoading} onPlayAudio={onPlayAudio} isAudioPlaying={isAudioPlaying} voiceOnly={voiceOnly} />
         </div>
         <div className="border-t p-4 bg-background/80 rounded-b-xl">
           <ChatInput 

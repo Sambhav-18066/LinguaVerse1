@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { ChatLayout } from '@/components/conversation/chat-layout';
 import type { Message } from '@/lib/types';
 import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-feedback';
@@ -25,15 +25,9 @@ export default function AgenticConversationPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  useEffect(() => {
-    if (messages.length > 0 && messages[messages.length - 1].isAI && messages[messages.length-1].text) {
-      handleTextToSpeech(messages[messages.length - 1].text);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length > 0 && messages[messages.length - 1].isAI ? messages[messages.length - 1].id : '']);
-
   const handleTextToSpeech = async (text: string) => {
     try {
+      setIsPlaying(true);
       const { audioDataUri } = await textToSpeech({ text });
       if (audioRef.current) {
         audioRef.current.src = audioDataUri;
@@ -44,8 +38,9 @@ export default function AgenticConversationPage() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to generate speech.',
+        description: 'Failed to generate speech. You may have exceeded your API quota.',
       });
+      setIsPlaying(false);
     }
   };
 
@@ -98,7 +93,14 @@ export default function AgenticConversationPage() {
     const handleAudioPlayback = (audio: HTMLAudioElement) => {
       audio.onplay = () => setIsPlaying(true);
       audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => setIsPlaying(false);
+      audio.onerror = () => {
+        setIsPlaying(false);
+        toast({
+            variant: 'destructive',
+            title: 'Audio Playback Error',
+            description: 'Could not play the generated audio.',
+        });
+      };
     };
 
   return (
@@ -113,6 +115,7 @@ export default function AgenticConversationPage() {
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             isAudioPlaying={isPlaying}
+            onPlayAudio={handleTextToSpeech}
             voiceOnly={true}
         />
         <audio ref={el => {

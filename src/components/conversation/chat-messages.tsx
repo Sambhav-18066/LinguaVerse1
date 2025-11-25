@@ -3,16 +3,19 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
-import { Bot, User } from 'lucide-react';
+import { Bot, User, Volume2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
+  isAudioPlaying?: boolean;
+  onPlayAudio?: (text: string) => void;
   voiceOnly?: boolean;
 }
 
-export function ChatMessages({ messages, isLoading, voiceOnly = false }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading, isAudioPlaying, onPlayAudio, voiceOnly = false }: ChatMessagesProps) {
   return (
     <>
       {messages.map((message) => {
@@ -36,13 +39,24 @@ export function ChatMessages({ messages, isLoading, voiceOnly = false }: ChatMes
             )}
             <div
               className={cn(
-                'max-w-md rounded-xl px-4 py-3 text-sm shadow-md',
+                'max-w-md rounded-xl px-4 py-3 text-sm shadow-md flex items-center gap-2',
                 message.isAI
                   ? 'bg-card rounded-tl-none'
                   : 'bg-primary text-primary-foreground rounded-br-none'
               )}
             >
               <p>{message.text}</p>
+              {message.isAI && onPlayAudio && (
+                 <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                    onClick={() => onPlayAudio(message.text)}
+                    disabled={isAudioPlaying}
+                >
+                    <Volume2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             {!message.isAI && (
               <Avatar className="h-8 w-8 border">
