@@ -108,7 +108,7 @@ export function MainNav() {
                 <SidebarMenuSub>
                   {item.subItems.map((subItem) => (
                     <SidebarMenuItem key={subItem.href}>
-                      <Link href={subItem.href} passHref>
+                      <Link href={subItem.href}>
                         <SidebarMenuSubButton
                           isActive={pathname === subItem.href}
                         >
