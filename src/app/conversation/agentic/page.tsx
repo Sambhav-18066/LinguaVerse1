@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ChatLayout } from '@/components/conversation/chat-layout';
 import type { Message } from '@/lib/types';
 import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-feedback';
+import { assessSpeakingSkills } from '@/ai/flows/assess-speaking-skills';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,10 +49,31 @@ export default function AgenticConversationPage() {
     }
   };
 
-  const handleSendMessage = async (messageText: string) => {
+  const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     setIsLoading(true);
     try {
-      const feedbackResponse = await generatePersonalizedFeedback({ spokenText: messageText });
+      let assessmentResult;
+      if (audioBlob) {
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        await new Promise<void>((resolve) => {
+            reader.onloadend = async () => {
+                const base64data = reader.result as string;
+                try {
+                    assessmentResult = await assessSpeakingSkills({ speechDataUri: base64data });
+                } catch (e) {
+                    console.error("Could not assess skills from audio", e);
+                } finally {
+                    resolve();
+                }
+            };
+        });
+      }
+
+      const feedbackResponse = await generatePersonalizedFeedback({ 
+        spokenText: messageText,
+        assessment: assessmentResult
+      });
       
       const aiResponse: Message = {
         id: Date.now().toString(),

@@ -19,6 +19,14 @@ const GeneratePersonalizedFeedbackInputSchema = z.object({
     .string()
     .optional()
     .describe('Optional user request for a specific type of feedback.'),
+  assessment: z.object({
+    fluency: z.number(),
+    lexicalRichness: z.number(),
+    reflectiveTurns: z.number(),
+    autobiographicalDepth: z.number(),
+    conversationInitiative: z.number(),
+    narrativeContinuity: z.number(),
+  }).optional().describe('The speaking skill assessment scores.'),
 });
 export type GeneratePersonalizedFeedbackInput = z.infer<typeof GeneratePersonalizedFeedbackInputSchema>;
 
@@ -38,9 +46,21 @@ const prompt = ai.definePrompt({
   prompt: `You are an AI language tutor providing personalized feedback on spoken English.
 
   The user has spoken the following text:
-  {{spokenText}}
+  {{{spokenText}}}
 
-  {% if feedbackRequest %}The user has requested the following specific feedback: {{feedbackRequest}}{% endif %}
+  {{#if assessment}}
+  Here is the user's current speaking assessment scores:
+  - Fluency: {{{assessment.fluency}}}/150 WPM
+  - Lexical Richness: {{{assessment.lexicalRichness}}}/10
+  - Reflective Turns: {{{assessment.reflectiveTurns}}}/10
+  - Autobiographical Depth: {{{assessment.autobiographicalDepth}}}/10
+  - Conversation Initiative: {{{assessment.conversationInitiative}}}/10
+  - Narrative Continuity: {{{assessment.narrativeContinuity}}}/10
+
+  Use these scores to inform your feedback. For example, if fluency is low, suggest ways to improve it.
+  {{/if}}
+
+  {{#if feedbackRequest}}The user has requested the following specific feedback: {{{feedbackRequest}}}{{/if}}
 
   Provide feedback on grammar, vocabulary, and pronunciation, and offer concrete suggestions for improvement.
   Your feedback should be tailored to the user's specific needs and level of proficiency.

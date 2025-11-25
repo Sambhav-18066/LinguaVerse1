@@ -8,14 +8,14 @@ import { Card } from '@/components/ui/card';
 interface ChatLayoutProps {
   messages: Message[];
   setMessages: Dispatch<SetStateAction<Message[]>>;
-  onSendMessage: (message: string) => Promise<void>;
+  onSendMessage: (message: string, audioBlob?: Blob) => Promise<void>;
   isLoading: boolean;
   isAudioPlaying?: boolean;
 }
 
 export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isAudioPlaying }: ChatLayoutProps) {
   
-  const handleSendMessage = async (messageText: string) => {
+  const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     if (!messageText.trim()) return;
 
     const newMessage: Message = {
@@ -27,7 +27,7 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
     };
 
     setMessages((prev) => [...prev, newMessage]);
-    await onSendMessage(messageText);
+    await onSendMessage(messageText, audioBlob);
   };
 
   return (

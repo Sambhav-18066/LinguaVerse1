@@ -6,7 +6,7 @@ import { Mic, Send, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, audioBlob?: Blob) => void;
   isLoading: boolean;
   isAudioPlaying?: boolean;
 }
@@ -15,6 +15,8 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInpu
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -25,19 +27,23 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInpu
       recognition.lang = 'en-US';
       
       recognition.onresult = (event) => {
+        let interimTranscript = '';
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
+           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
           }
         }
+        setMessage(finalTranscript + interimTranscript);
         if (finalTranscript) {
-            handleSend(finalTranscript);
+            stopRecording(finalTranscript);
         }
       };
       
       recognition.onend = () => {
-        if (isRecording) { // Auto-restart if still in recording state
+        if (isRecording) {
             recognition.start();
         }
       };
@@ -54,6 +60,9 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInpu
         if (recognitionRef.current) {
             recognitionRef.current.stop();
         }
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+        }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -61,34 +70,72 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInpu
   useEffect(() => {
     // Stop recognition when AI is speaking
     if(isAudioPlaying && isRecording) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsRecording(false);
+      stopRecording(message);
     }
-  }, [isAudioPlaying, isRecording]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAudioPlaying]);
 
 
-  const handleRecord = () => {
+  const startRecording = async () => {
     if (!recognitionRef.current) {
         alert("Speech recognition is not supported in this browser.");
         return;
     };
+    
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current = mediaRecorder;
+        
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunksRef.current.push(event.data);
+            }
+        };
 
-    if (isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    } else {
-      setMessage('');
-      recognitionRef.current.start();
-      setIsRecording(true);
+        mediaRecorder.onstop = () => {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        mediaRecorder.start();
+        recognitionRef.current.start();
+        setIsRecording(true);
+        setMessage('');
+        audioChunksRef.current = [];
+
+    } catch (err) {
+        console.error("Error starting recording:", err);
     }
   };
 
-  const handleSend = (text?: string) => {
-    const textToSend = text || message;
-    if (textToSend.trim()) {
-      onSendMessage(textToSend);
+  const stopRecording = (finalTranscript: string) => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+    }
+    
+    setIsRecording(false);
+    
+    if (finalTranscript.trim()) {
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      onSendMessage(finalTranscript, audioBlob);
+      setMessage('');
+    }
+  };
+
+  const handleToggleRecord = () => {
+      if (isRecording) {
+        stopRecording(message);
+      } else {
+        startRecording();
+      }
+  };
+
+  const handleSendText = () => {
+    if (message.trim()) {
+      onSendMessage(message);
       setMessage('');
     }
   };
@@ -96,7 +143,7 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInpu
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSendText();
     }
   };
   
@@ -105,7 +152,7 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInpu
       <Button
         variant="outline"
         size="icon"
-        onClick={handleRecord}
+        onClick={handleToggleRecord}
         className={cn(
           "h-10 w-10 flex-shrink-0",
           isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -119,12 +166,12 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInpu
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Type your message or use the mic..."
+        placeholder={isRecording ? "Listening..." : "Type your message or use the mic..."}
         className="min-h-0 resize-none"
         rows={1}
-        disabled={isLoading}
+        disabled={isLoading || isRecording}
       />
-      <Button onClick={() => handleSend()} disabled={isLoading || !message.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
+      <Button onClick={handleSendText} disabled={isLoading || isRecording || !message.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
         <Send className="h-4 w-4" />
         <span className="sr-only">Send message</span>
       </Button>
