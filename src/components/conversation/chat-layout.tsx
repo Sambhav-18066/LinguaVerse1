@@ -10,9 +10,10 @@ interface ChatLayoutProps {
   setMessages: Dispatch<SetStateAction<Message[]>>;
   onSendMessage: (message: string) => Promise<void>;
   isLoading: boolean;
+  isAudioPlaying?: boolean;
 }
 
-export function ChatLayout({ messages, setMessages, onSendMessage, isLoading }: ChatLayoutProps) {
+export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isAudioPlaying }: ChatLayoutProps) {
   
   const handleSendMessage = async (messageText: string) => {
     if (!messageText.trim()) return;
@@ -36,7 +37,11 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading }: 
           <ChatMessages messages={messages} isLoading={isLoading} />
         </div>
         <div className="border-t p-4 bg-background/80 rounded-b-xl">
-          <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+          <ChatInput 
+            onSendMessage={handleSendMessage} 
+            isLoading={isLoading} 
+            isAudioPlaying={isAudioPlaying}
+            />
         </div>
       </div>
     </Card>

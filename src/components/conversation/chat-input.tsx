@@ -8,9 +8,10 @@ import { cn } from '@/lib/utils';
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  isAudioPlaying?: boolean;
 }
 
-export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isLoading, isAudioPlaying }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -24,29 +25,49 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
       recognition.lang = 'en-US';
       
       recognition.onresult = (event) => {
-        let interimTranscript = '';
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
           }
         }
-        setMessage(message + finalTranscript + interimTranscript);
+        if (finalTranscript) {
+            handleSend(finalTranscript);
+        }
       };
       
       recognition.onend = () => {
-        setIsRecording(false);
+        if (isRecording) { // Auto-restart if still in recording state
+            recognition.start();
+        }
       };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsRecording(false);
+      }
 
       recognitionRef.current = recognition;
     }
 
     return () => {
-      recognitionRef.current?.stop();
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+        }
     };
-  }, [message]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // Stop recognition when AI is speaking
+    if(isAudioPlaying && isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsRecording(false);
+    }
+  }, [isAudioPlaying, isRecording]);
+
 
   const handleRecord = () => {
     if (!recognitionRef.current) {
@@ -64,9 +85,10 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     }
   };
 
-  const handleSend = () => {
-    if (message.trim()) {
-      onSendMessage(message);
+  const handleSend = (text?: string) => {
+    const textToSend = text || message;
+    if (textToSend.trim()) {
+      onSendMessage(textToSend);
       setMessage('');
     }
   };
@@ -88,7 +110,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
           "h-10 w-10 flex-shrink-0",
           isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
         )}
-        disabled={isLoading}
+        disabled={isLoading || isAudioPlaying}
       >
         {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
         <span className="sr-only">{isRecording ? "Stop recording" : "Start recording"}</span>
@@ -102,7 +124,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
         rows={1}
         disabled={isLoading}
       />
-      <Button onClick={handleSend} disabled={isLoading || !message.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
+      <Button onClick={() => handleSend()} disabled={isLoading || !message.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
         <Send className="h-4 w-4" />
         <span className="sr-only">Send message</span>
       </Button>
