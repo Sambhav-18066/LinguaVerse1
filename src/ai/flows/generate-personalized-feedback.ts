@@ -60,11 +60,20 @@ const prompt = ai.definePrompt({
   Use these scores to inform your feedback. For example, if fluency is low, suggest ways to improve it.
   {{/if}}
 
-  {{#if feedbackRequest}}The user has requested the following specific feedback: {{{feedbackRequest}}}{{/if}}
-
+  {{#if feedbackRequest}}
+  This is a special instruction that overrides other behavior. Follow it strictly.
+  '{{{feedbackRequest}}}'
+  This means you should act as a conversational partner for an assessment.
+  - Acknowledge the user's last statement briefly.
+  - Ask a relevant follow-up question to keep the discussion going.
+  - DO NOT provide feedback, suggestions, or analysis.
+  - DO NOT deviate from the topic.
+  - Your goal is to facilitate a natural, on-topic conversation.
+  {{else}}
   Provide feedback on grammar, vocabulary, and pronunciation, and offer concrete suggestions for improvement.
   Your feedback should be tailored to the user's specific needs and level of proficiency.
   Focus on the most important areas for improvement and provide clear, actionable steps.
+  {{/if}}
 `,
 });
 
