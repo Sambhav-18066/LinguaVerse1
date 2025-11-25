@@ -1,32 +1,90 @@
 'use client';
 
-import { useState } from 'react';
-import { AssessmentRecorder } from '@/components/assessment/assessment-recorder';
+import { useState, useRef } from 'react';
+import { ChatLayout } from '@/components/conversation/chat-layout';
 import { AssessmentResults } from '@/components/assessment/assessment-results';
-import type { SpeakingAssessmentResult } from '@/lib/types';
+import { TopicSelector } from '@/components/assessment/topic-selector';
+import type { Message, SpeakingAssessmentResult } from '@/lib/types';
 import { assessSpeakingSkills } from '@/ai/flows/assess-speaking-skills';
+import { generateConversationTopics } from '@/ai/flows/generate-conversation-topics';
+import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-feedback';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText } from 'lucide-react';
+import { FileText, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AssessmentPage() {
   const [assessmentResult, setAssessmentResult] = useState<SpeakingAssessmentResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isAssessing, setIsAssessing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [conversationStarted, setConversationStarted] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
 
-  const handleStartAssessment = () => {
+  const handleStartConversation = (topic: string) => {
+    setMessages([
+      {
+        id: '1',
+        text: `Great! Let's talk about ${topic}. Tell me something about it.`,
+        timestamp: Date.now(),
+        isAI: true,
+        user: { id: 'ai', name: 'Assessor AI', avatarUrl: '' },
+      },
+    ]);
+    setConversationStarted(true);
     setAssessmentResult(null);
-    setIsAssessing(true);
+    audioChunksRef.current = [];
   };
-  
-  const handleFinishAssessment = async (audioBlob: Blob) => {
+
+  const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     setIsLoading(true);
-    setIsAssessing(false);
+    if (audioBlob) {
+      audioChunksRef.current.push(audioBlob);
+    }
+    try {
+      const feedbackResponse = await generatePersonalizedFeedback({ 
+        spokenText: messageText, 
+        feedbackRequest: "Keep the conversation going. Ask a follow-up question." 
+      });
+      
+      const aiResponse: Message = {
+        id: Date.now().toString(),
+        text: feedbackResponse.feedback,
+        timestamp: Date.now(),
+        isAI: true,
+        user: { id: 'ai', name: 'Assessor AI', avatarUrl: '' },
+      };
+      setMessages((prev) => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('Error generating response:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to get a response from the AI.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFinishAndAnalyze = async () => {
+    if (audioChunksRef.current.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'No Speech Recorded',
+        description: 'You need to speak at least once to get an assessment.',
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
     
+    // Combine all audio chunks into a single Blob
+    const combinedAudioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
     const reader = new FileReader();
-    reader.readAsDataURL(audioBlob);
+    reader.readAsDataURL(combinedAudioBlob);
     reader.onloadend = async () => {
       const base64data = reader.result as string;
       try {
@@ -46,43 +104,57 @@ export default function AssessmentPage() {
           description: 'There was an error processing your speech. Please try again.',
         });
       } finally {
-        setIsLoading(false);
+        setIsAnalyzing(false);
+        setConversationStarted(false);
       }
     };
   };
 
-  if (isAssessing) {
-    return <AssessmentRecorder onFinish={handleFinishAssessment} />;
-  }
+  const handleRetake = () => {
+    setAssessmentResult(null);
+    setConversationStarted(false);
+    setMessages([]);
+    audioChunksRef.current = [];
+  };
 
-  if (isLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <FileText className="w-12 h-12 text-primary animate-pulse mb-4" />
-            <h2 className="text-2xl font-bold">Analyzing your speech...</h2>
-            <p className="text-muted-foreground">This may take a moment. We're calculating your scores.</p>
-        </div>
-      )
+  if (isAnalyzing) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-4">
+        <FileText className="w-12 h-12 text-primary animate-pulse mb-4" />
+        <h2 className="text-2xl font-bold">Analyzing your conversation...</h2>
+        <p className="text-muted-foreground">This may take a moment. We're calculating your final scores.</p>
+      </div>
+    );
   }
 
   if (assessmentResult) {
-    return <AssessmentResults result={assessmentResult} onRetake={handleStartAssessment} />;
+    return <AssessmentResults result={assessmentResult} onRetake={handleRetake} />;
   }
 
-  return (
-    <div className="flex items-center justify-center h-full p-4">
-      <Card className="w-full max-w-lg text-center">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline">Speaking Assessment</CardTitle>
-          <CardDescription>Take a short test to evaluate your English speaking skills based on the Speaking-of-Self rubric.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-6">You will be prompted to speak for about a minute. Please ensure your microphone is enabled.</p>
-          <Button size="lg" onClick={handleStartAssessment}>
-            Start Assessment
+  if (conversationStarted) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="text-center mb-4">
+          <h1 className="text-3xl font-bold font-headline">Conversational Assessment</h1>
+          <p className="text-muted-foreground">Have a conversation with the AI. Click "Finish & Analyze" when you're done.</p>
+        </div>
+        <div className="flex-grow">
+           <ChatLayout
+              messages={messages}
+              setMessages={setMessages}
+              onSendMessage={handleSendMessage}
+              isLoading={isLoading}
+          />
+        </div>
+        <div className="flex justify-center py-4">
+          <Button onClick={handleFinishAndAnalyze} size="lg" disabled={isLoading}>
+            <Loader2 className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : 'hidden'}`} />
+            Finish & Analyze Session
           </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
+        </div>
+      </div>
+    );
+  }
+
+  return <TopicSelector onTopicSelect={handleStartConversation} />;
 }

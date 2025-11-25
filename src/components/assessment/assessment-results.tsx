@@ -21,7 +21,9 @@ const metrics = [
 export function AssessmentResults({ result, onRetake }: AssessmentResultsProps) {
     
   const getProgressValue = (value: number, max: number) => {
-    return (value / max) * 100;
+    // Handle cases where value might be null or undefined, default to 0
+    const numericValue = typeof value === 'number' ? value : 0;
+    return (numericValue / max) * 100;
   };
     
   return (
@@ -32,14 +34,14 @@ export function AssessmentResults({ result, onRetake }: AssessmentResultsProps) 
                 <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
           <CardTitle className="text-3xl font-headline">Assessment Complete</CardTitle>
-          <CardDescription>Here are your scores based on the Speaking-of-Self rubric.</CardDescription>
+          <CardDescription>Here are your scores based on your conversation.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {metrics.map(({ key, label, max }) => (
             <div key={key} className="space-y-1">
               <div className="flex justify-between items-baseline">
                 <p className="text-sm font-medium">{label}</p>
-                <p className="text-lg font-bold text-primary">{result[key as keyof SpeakingAssessmentResult]}</p>
+                <p className="text-lg font-bold text-primary">{(result[key as keyof SpeakingAssessmentResult] as number) || 0}</p>
               </div>
               <Progress value={getProgressValue(result[key as keyof SpeakingAssessmentResult] as number, max)} />
             </div>
@@ -48,7 +50,7 @@ export function AssessmentResults({ result, onRetake }: AssessmentResultsProps) 
         <CardFooter>
           <Button onClick={onRetake} className="w-full" variant="outline">
             <Repeat className="mr-2 h-4 w-4" />
-            Retake Assessment
+            Take New Assessment
           </Button>
         </CardFooter>
       </Card>
