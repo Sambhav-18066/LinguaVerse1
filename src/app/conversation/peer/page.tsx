@@ -96,8 +96,7 @@ export default function PeerConversationPage() {
       audioEl.removeEventListener('ended', onEnded);
       audioEl.removeEventListener('error', onError);
     };
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast, isRecording, handleStartRecording]);
+  }, [toast, isRecording, handleStartRecording, messages, handleTextToSpeech]);
 
 
   // Simulate a peer's response using the AI

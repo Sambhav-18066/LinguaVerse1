@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { ChatLayout, type ChatLayoutRef } from '@/components/conversation/chat-layout';
 import { AssessmentResults } from '@/components/assessment/assessment-results';
 import { TopicSelector } from '@/components/assessment/topic-selector';

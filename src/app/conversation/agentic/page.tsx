@@ -97,8 +97,7 @@ export default function AgenticConversationPage() {
       audioEl.removeEventListener('ended', onEnded);
       audioEl.removeEventListener('error', onError);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast, isRecording, handleStartRecording]);
+  }, [toast, isRecording, handleStartRecording, messages, handleTextToSpeech]);
 
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     setIsLoading(true);
