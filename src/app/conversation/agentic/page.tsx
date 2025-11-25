@@ -112,6 +112,7 @@ export default function AgenticConversationPage() {
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             isRecording={isRecording}
+            onRecordingChange={setIsRecording}
             isAudioPlaying={isAudioPlaying}
         />
     </div>

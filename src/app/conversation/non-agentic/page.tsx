@@ -92,6 +92,7 @@ export default function NonAgenticConversationPage() {
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             isRecording={isRecording}
+            onRecordingChange={setIsRecording}
             isAudioPlaying={isAudioPlaying}
         />
     </div>

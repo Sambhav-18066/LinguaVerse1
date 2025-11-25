@@ -17,6 +17,8 @@ const initialMessages: Message[] = [
 export default function PeerConversationPage() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
   // Mock peer response
   const handleSendMessage = async (messageText: string) => {
@@ -48,6 +50,9 @@ export default function PeerConversationPage() {
             setMessages={setMessages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
+            isRecording={isRecording}
+            onRecordingChange={setIsRecording}
+            isAudioPlaying={isAudioPlaying}
         />
     </div>
   );

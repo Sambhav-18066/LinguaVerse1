@@ -15,9 +15,10 @@ interface ChatLayoutProps {
   isLoading: boolean;
   isRecording: boolean;
   isAudioPlaying: boolean;
+  onRecordingChange: (isRecording: boolean) => void;
 }
 
-export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isRecording, isAudioPlaying }: ChatLayoutProps) {
+export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isRecording, isAudioPlaying, onRecordingChange }: ChatLayoutProps) {
   
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     if (!messageText.trim()) return;
@@ -66,7 +67,14 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
         </AnimatePresence>
       </div>
       <div className="border-t p-4 bg-background/80 rounded-b-xl">
-        <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} isAudioPlaying={isAudioPlaying} voiceOnly={true} onRecordingChange={isRecording} />
+        <ChatInput 
+            onSendMessage={handleSendMessage} 
+            isLoading={isLoading} 
+            isAudioPlaying={isAudioPlaying} 
+            voiceOnly={true} 
+            isRecording={isRecording}
+            onRecordingChange={onRecordingChange} 
+        />
       </div>
     </Card>
   );

@@ -149,6 +149,7 @@ export default function AssessmentPage() {
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
               isRecording={isRecording}
+              onRecordingChange={setIsRecording}
               isAudioPlaying={isAudioPlaying}
           />
         </div>

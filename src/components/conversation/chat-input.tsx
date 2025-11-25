@@ -11,12 +11,12 @@ interface ChatInputProps {
   isLoading: boolean;
   isAudioPlaying?: boolean;
   voiceOnly?: boolean;
+  isRecording: boolean;
   onRecordingChange: (isRecording: boolean) => void;
 }
 
-export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly = false, onRecordingChange }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly = false, isRecording, onRecordingChange }: ChatInputProps) {
   const [message, setMessage] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -53,7 +53,6 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly 
 
       recognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
-        setIsRecording(false);
         onRecordingChange(false);
       }
 
@@ -103,7 +102,6 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly 
 
         mediaRecorder.start();
         recognitionRef.current.start();
-        setIsRecording(true);
         onRecordingChange(true);
         setMessage('');
         audioChunksRef.current = [];
@@ -121,7 +119,6 @@ export function ChatInput({ onSendMessage, isLoading, isAudioPlaying, voiceOnly 
         mediaRecorderRef.current.stop();
     }
     
-    setIsRecording(false);
     onRecordingChange(false);
     
     if (finalTranscript.trim()) {
