@@ -6,6 +6,9 @@ import type { Message } from '@/lib/types';
 import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-feedback';
 import { assessSpeakingSkills } from '@/ai/flows/assess-speaking-skills';
 import { useToast } from '@/hooks/use-toast';
+import { generateTextToSpeech } from '@/ai/flows/generate-text-to-speech';
+import { Button } from '@/components/ui/button';
+import { Volume2, VolumeX } from 'lucide-react';
 
 const initialMessages: Message[] = [
   {
@@ -22,56 +25,80 @@ export default function AgenticConversationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [isAiMuted, setIsAiMuted] = useState(false);
+
   const { toast } = useToast();
   const chatLayoutRef = useRef<ChatLayoutRef>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleStartRecording = useCallback(() => {
     chatLayoutRef.current?.startRecording();
   }, []);
 
-  const handleTextToSpeech = useCallback((text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      
-      utterance.onstart = () => setIsAudioPlaying(true);
-      utterance.onend = () => {
-        setIsAudioPlaying(false);
-        if (!isRecording) {
-            handleStartRecording();
-        }
-      };
-      utterance.onerror = () => {
-        setIsAudioPlaying(false);
-        if (!isRecording) {
-          handleStartRecording();
-        }
-      };
+  const handleTextToSpeech = useCallback(async (text: string) => {
+    if (isAiMuted) {
+      if (!isRecording) handleStartRecording();
+      return;
+    }
 
-      window.speechSynthesis.speak(utterance);
-    } else {
-      console.warn('Browser does not support SpeechSynthesis.');
+    try {
+      const { audioDataUri } = await generateTextToSpeech({text});
+      if (audioDataUri && audioRef.current) {
+        audioRef.current.src = audioDataUri;
+        await audioRef.current.play();
+      } else {
+        if (!isRecording) handleStartRecording();
+      }
+    } catch (error) {
+      console.error("Error generating or playing TTS:", error);
       toast({
         variant: 'destructive',
-        title: 'TTS Not Supported',
-        description: 'Your browser does not support the Text-to-Speech feature.',
+        title: 'Text-to-Speech Error',
+        description: 'Could not play AI audio response.',
+      });
+      if (!isRecording) handleStartRecording();
+    }
+  }, [isAiMuted, isRecording, handleStartRecording, toast]);
+  
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl) return;
+  
+    const onPlay = () => setIsAudioPlaying(true);
+    const onEnded = () => {
+      setIsAudioPlaying(false);
+      if (!isRecording) {
+        handleStartRecording();
+      }
+    };
+    const onError = () => {
+      setIsAudioPlaying(false);
+      toast({
+        variant: 'destructive',
+        title: 'Audio Error',
+        description: 'There was an error playing the audio.',
       });
       if (!isRecording) {
         handleStartRecording();
       }
+    };
+  
+    audioEl.addEventListener('play', onPlay);
+    audioEl.addEventListener('ended', onEnded);
+    audioEl.addEventListener('error', onError);
+  
+    // Initial message
+    if (messages.length === 1 && messages[0].isAI) {
+      handleTextToSpeech(messages[0].text);
     }
-  }, [toast, isRecording, handleStartRecording]);
-
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.isAI) {
-      handleTextToSpeech(lastMessage.text);
-    }
+  
+    return () => {
+      audioEl.removeEventListener('play', onPlay);
+      audioEl.removeEventListener('ended', onEnded);
+      audioEl.removeEventListener('error', onError);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages]);
-
+  }, [toast, isRecording, handleStartRecording]);
 
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     setIsLoading(true);
@@ -111,6 +138,8 @@ export default function AgenticConversationPage() {
         user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
       };
       setMessages((prev) => [...prev, aiResponse]);
+      await handleTextToSpeech(aiResponse.text);
+
     } catch (error) {
       console.error('Error generating feedback:', error);
       toast({
@@ -122,12 +151,31 @@ export default function AgenticConversationPage() {
       setIsLoading(false);
     }
   };
+
+  const handleToggleMute = () => {
+    setIsAiMuted(prev => {
+      if (!prev && audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setIsAudioPlaying(false);
+        if (!isRecording) {
+            handleStartRecording();
+        }
+      }
+      return !prev;
+    });
+  }
   
   return (
     <div>
-        <div className="text-center mb-6">
+        <div className="flex justify-between items-center text-center mb-6">
+          <div className='flex-1'>
             <h1 className="text-3xl font-bold font-headline">Agentic AI Conversation</h1>
             <p className="text-muted-foreground">Chat with Amisha, an adaptive AI that provides helpful feedback.</p>
+          </div>
+          <Button onClick={handleToggleMute} variant="outline" size="icon">
+            {isAiMuted ? <VolumeX /> : <Volume2 />}
+          </Button>
         </div>
         <ChatLayout
             ref={chatLayoutRef}
@@ -138,6 +186,7 @@ export default function AgenticConversationPage() {
             onRecordingChange={setIsRecording}
             isAudioPlaying={isAudioPlaying}
         />
+        <audio ref={audioRef} className="hidden" />
     </div>
   );
 }

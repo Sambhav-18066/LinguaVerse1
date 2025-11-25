@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { ChatLayout } from '@/components/conversation/chat-layout';
+import { useState, useRef, useCallback } from 'react';
+import { ChatLayout, type ChatLayoutRef } from '@/components/conversation/chat-layout';
 import { AssessmentResults } from '@/components/assessment/assessment-results';
 import { TopicSelector } from '@/components/assessment/topic-selector';
 import type { Message, SpeakingAssessmentResult } from '@/lib/types';
@@ -10,8 +10,9 @@ import { generateConversationTopics } from '@/ai/flows/generate-conversation-top
 import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-feedback';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { generateTextToSpeech } from '@/ai/flows/generate-text-to-speech';
 
 export default function AssessmentPage() {
   const [assessmentResult, setAssessmentResult] = useState<SpeakingAssessmentResult | null>(null);
@@ -22,15 +23,83 @@ export default function AssessmentPage() {
   const [selectedTopic, setSelectedTopic] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [isAiMuted, setIsAiMuted] = useState(false);
+
   const audioChunksRef = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const chatLayoutRef = useRef<ChatLayoutRef>(null);
   const { toast } = useToast();
 
-  const handleStartConversation = (topic: string) => {
+  const handleStartRecording = useCallback(() => {
+    chatLayoutRef.current?.startRecording();
+  }, []);
+
+  const handleTextToSpeech = useCallback(async (text: string) => {
+    if (isAiMuted) {
+      if (!isRecording) handleStartRecording();
+      return;
+    }
+    
+    try {
+      const { audioDataUri } = await generateTextToSpeech({ text });
+      if (audioDataUri && audioRef.current) {
+        audioRef.current.src = audioDataUri;
+        await audioRef.current.play();
+      } else {
+        if (!isRecording) handleStartRecording();
+      }
+    } catch (error) {
+      console.error("Error generating or playing TTS:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Text-to-Speech Error',
+        description: 'Could not play AI audio response.',
+      });
+      if (!isRecording) handleStartRecording();
+    }
+  }, [isAiMuted, isRecording, handleStartRecording, toast]);
+
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl) return;
+  
+    const onPlay = () => setIsAudioPlaying(true);
+    const onEnded = () => {
+      setIsAudioPlaying(false);
+      if (!isRecording) {
+        handleStartRecording();
+      }
+    };
+    const onError = () => {
+      setIsAudioPlaying(false);
+      toast({
+        variant: 'destructive',
+        title: 'Audio Error',
+        description: 'There was an error playing the audio.',
+      });
+      if (!isRecording) {
+        handleStartRecording();
+      }
+    };
+  
+    audioEl.addEventListener('play', onPlay);
+    audioEl.addEventListener('ended', onEnded);
+    audioEl.addEventListener('error', onError);
+  
+    return () => {
+      audioEl.removeEventListener('play', onPlay);
+      audioEl.removeEventListener('ended', onEnded);
+      audioEl.removeEventListener('error', onError);
+    };
+  }, [toast, isRecording, handleStartRecording]);
+
+  const handleStartConversation = async (topic: string) => {
     setSelectedTopic(topic);
+    const initialText = `Let's talk about ${topic}. What are your initial thoughts?`;
     setMessages([
       {
         id: '1',
-        text: `Let's talk about ${topic}. What are your initial thoughts?`,
+        text: initialText,
         timestamp: Date.now(),
         isAI: true,
         user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
@@ -39,6 +108,7 @@ export default function AssessmentPage() {
     setConversationStarted(true);
     setAssessmentResult(null);
     audioChunksRef.current = [];
+    await handleTextToSpeech(initialText);
   };
 
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
@@ -64,6 +134,8 @@ export default function AssessmentPage() {
         user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
       };
       setMessages((prev) => [...prev, aiResponse]);
+      await handleTextToSpeech(aiResponse.text);
+
     } catch (error) {
       console.error('Error generating response:', error);
       toast({
@@ -125,6 +197,20 @@ export default function AssessmentPage() {
     audioChunksRef.current = [];
   };
 
+  const handleToggleMute = () => {
+    setIsAiMuted(prev => {
+      if (!prev && audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setIsAudioPlaying(false);
+        if (!isRecording) {
+            handleStartRecording();
+        }
+      }
+      return !prev;
+    });
+  }
+
   if (isAnalyzing) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
@@ -142,12 +228,18 @@ export default function AssessmentPage() {
   if (conversationStarted) {
     return (
       <div className="flex flex-col h-full">
-        <div className="text-center mb-4">
-          <h1 className="text-3xl font-bold font-headline">Conversational Assessment</h1>
-          <p className="text-muted-foreground">Have a conversation with the AI. Click "Finish & Analyze" when you're done.</p>
+         <div className="flex justify-between items-center text-center mb-4">
+            <div className="flex-1">
+                <h1 className="text-3xl font-bold font-headline">Conversational Assessment</h1>
+                <p className="text-muted-foreground">Have a conversation with the AI. Click "Finish & Analyze" when you're done.</p>
+            </div>
+            <Button onClick={handleToggleMute} variant="outline" size="icon">
+              {isAiMuted ? <VolumeX /> : <Volume2 />}
+            </Button>
         </div>
         <div className="flex-grow">
            <ChatLayout
+              ref={chatLayoutRef}
               messages={messages}
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
@@ -162,6 +254,7 @@ export default function AssessmentPage() {
             Finish & Analyze Session
           </Button>
         </div>
+        <audio ref={audioRef} className="hidden" />
       </div>
     );
   }
