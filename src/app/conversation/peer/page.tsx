@@ -74,9 +74,12 @@ export default function PeerConversationPage() {
   // Simulate a peer's response using the AI
   const handleSendMessage = async (messageText: string) => {
     setIsLoading(true);
+    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User', avatarUrl: '' } }];
+    setMessages(newMessages);
     
     try {
       const peerResponseText = await generatePersonalizedFeedback({
+        history: messages,
         spokenText: messageText,
         feedbackRequest: "Respond as 'Alex', another English language learner. Keep your response casual, friendly, and short. Ask a follow-up question."
       });
@@ -112,7 +115,6 @@ export default function PeerConversationPage() {
         <ChatLayout
             ref={chatLayoutRef}
             messages={messages}
-            setMessages={setMessages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             isRecording={isRecording}

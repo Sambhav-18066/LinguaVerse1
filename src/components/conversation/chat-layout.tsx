@@ -1,5 +1,5 @@
 'use client';
-import { type Dispatch, type SetStateAction, useImperativeHandle, forwardRef, useRef } from 'react';
+import { type ForwardedRef, useImperativeHandle, forwardRef, useRef } from 'react';
 import type { Message } from '@/lib/types';
 import { ChatInput, type ChatInputRef } from './chat-input';
 import { Card } from '@/components/ui/card';
@@ -10,7 +10,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 interface ChatLayoutProps {
   messages: Message[];
-  setMessages: Dispatch<SetStateAction<Message[]>>;
   onSendMessage: (message: string, audioBlob?: Blob) => Promise<void>;
   isLoading: boolean;
   isRecording: boolean;
@@ -23,7 +22,7 @@ export interface ChatLayoutRef {
 }
 
 export const ChatLayout = forwardRef<ChatLayoutRef, ChatLayoutProps>(
-  ({ messages, setMessages, onSendMessage, isLoading, isRecording, onRecordingChange, isAudioPlaying }, ref) => {
+  ({ messages, onSendMessage, isLoading, isRecording, onRecordingChange, isAudioPlaying }, ref) => {
   
   const chatInputRef = useRef<ChatInputRef>(null);
 
@@ -33,24 +32,10 @@ export const ChatLayout = forwardRef<ChatLayoutRef, ChatLayoutProps>(
     }
   }));
 
-  const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
-    if (!messageText.trim()) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: messageText,
-      timestamp: Date.now(),
-      isAI: false,
-      user: { id: '1', name: 'User', avatarUrl: 'https://picsum.photos/seed/1/100/100' },
-    };
-
-    setMessages((prev) => [...prev, newMessage]);
-    await onSendMessage(messageText, audioBlob);
-  };
-
   const lastMessage = messages[messages.length - 1];
   const isAiTurn = lastMessage?.isAI || isLoading;
   const aiAvatarUrl = lastMessage?.user?.avatarUrl;
+  const aiName = lastMessage?.user?.name || "AI";
 
   return (
     <Card className="h-[calc(100vh-12rem)] w-full max-w-4xl mx-auto flex flex-col shadow-2xl rounded-xl">
@@ -69,12 +54,12 @@ export const ChatLayout = forwardRef<ChatLayoutRef, ChatLayoutProps>(
                 isAiTurn && "border-primary",
                 isRecording && "border-destructive animate-pulse"
               )}>
-                <AvatarImage src={isAiTurn ? aiAvatarUrl : undefined} />
+                <AvatarImage src={isAiTurn ? aiAvatarUrl : ''} />
                 <AvatarFallback className="text-muted-foreground">
                   {isAiTurn ? <Bot className="h-12 w-12" /> : <User className="h-12 w-12" />}
                 </AvatarFallback>
               </Avatar>
-              <h2 className="text-2xl font-bold font-headline">{isAiTurn ? "Amisha is speaking..." : "Your turn"}</h2>
+              <h2 className="text-2xl font-bold font-headline">{isAiTurn ? `${aiName} is speaking...` : "Your turn"}</h2>
               <p className="text-muted-foreground max-w-md">
                 {isRecording ? "Listening..." : (isAiTurn ? "Listen to the response." : "Click the microphone to speak.")}
               </p>
@@ -84,7 +69,7 @@ export const ChatLayout = forwardRef<ChatLayoutRef, ChatLayoutProps>(
       <div className="border-t p-4 bg-background/80 rounded-b-xl">
         <ChatInput 
             ref={chatInputRef}
-            onSendMessage={handleSendMessage} 
+            onSendMessage={onSendMessage} 
             isLoading={isLoading} 
             isAudioPlaying={isAudioPlaying} 
             voiceOnly={true} 

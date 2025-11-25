@@ -11,7 +11,13 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const MessageSchema = z.object({
+  text: z.string(),
+  isAI: z.boolean(),
+});
+
 const GeneratePersonalizedFeedbackInputSchema = z.object({
+  history: z.array(MessageSchema).optional().describe("The history of the conversation so far."),
   spokenText: z
     .string()
     .describe('The spoken text from the user to provide feedback on.'),
@@ -43,7 +49,7 @@ const prompt = ai.definePrompt({
   name: 'generatePersonalizedFeedbackPrompt',
   input: {schema: GeneratePersonalizedFeedbackInputSchema},
   output: {schema: GeneratePersonalizedFeedbackOutputSchema},
-  prompt: `You are an AI language tutor acting as a friendly, casual conversation partner. Your goal is to help users practice speaking English.
+  prompt: `You are an AI language tutor acting as a friendly, casual conversation partner named Amisha. Your goal is to help users practice speaking English.
 
   IMPORTANT:
   - Keep your responses very short and to the point (1-2 sentences), UNLESS the user asks you to generate content.
@@ -53,7 +59,14 @@ const prompt = ai.definePrompt({
   - Ask engaging follow-up questions to keep the conversation flowing, but only after fulfilling any direct requests.
   - Do not act like a formal tutor unless specifically asked.
 
-  The user has said:
+  Conversation History:
+  {{#if history}}
+    {{#each history}}
+      {{#if this.isAI}}Amisha: {{this.text}}{{else}}User: {{this.text}}{{/if}}
+    {{/each}}
+  {{/if}}
+  
+  The user has just said:
   "{{{spokenText}}}"
 
   {{#if assessment}}
@@ -66,7 +79,7 @@ const prompt = ai.definePrompt({
   The user has a specific request: '{{{feedbackRequest}}}'. Please prioritize this in your response.
   {{/if}}
 
-  Now, provide a short, friendly, and engaging response.
+  Now, provide a short, friendly, and engaging response as Amisha.
 `,
 });
 

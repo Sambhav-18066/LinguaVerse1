@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 const initialMessages: Message[] = [
   {
     id: '1',
-    text: "Hello! I'm your agentic AI partner. Let's talk about your recent travel experiences. Where is the most interesting place you've visited?",
+    text: "Hello! I'm your agentic AI partner, Amisha. Let's talk about your recent travel experiences. Where is the most interesting place you've visited?",
     timestamp: Date.now(),
     isAI: true,
     user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
@@ -75,6 +75,9 @@ export default function AgenticConversationPage() {
 
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     setIsLoading(true);
+    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User', avatarUrl: '' } }];
+    setMessages(newMessages);
+
     try {
       let assessmentResult;
       if (audioBlob) {
@@ -95,6 +98,7 @@ export default function AgenticConversationPage() {
       }
 
       const feedbackResponse = await generatePersonalizedFeedback({ 
+        history: messages,
         spokenText: messageText,
         assessment: assessmentResult
       });
@@ -123,12 +127,11 @@ export default function AgenticConversationPage() {
     <div>
         <div className="text-center mb-6">
             <h1 className="text-3xl font-bold font-headline">Agentic AI Conversation</h1>
-            <p className="text-muted-foreground">Chat with an adaptive AI that provides helpful feedback.</p>
+            <p className="text-muted-foreground">Chat with Amisha, an adaptive AI that provides helpful feedback.</p>
         </div>
         <ChatLayout
             ref={chatLayoutRef}
             messages={messages}
-            setMessages={setMessages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             isRecording={isRecording}

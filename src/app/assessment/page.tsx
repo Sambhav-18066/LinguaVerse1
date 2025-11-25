@@ -43,11 +43,15 @@ export default function AssessmentPage() {
 
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     setIsLoading(true);
+    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User', avatarUrl: '' } }];
+    setMessages(newMessages);
+
     if (audioBlob) {
       audioChunksRef.current.push(audioBlob);
     }
     try {
       const feedbackResponse = await generatePersonalizedFeedback({ 
+        history: messages,
         spokenText: messageText, 
         feedbackRequest: `Keep the conversation going about the topic: "${selectedTopic}". Ask a follow-up question related to it.`
       });
@@ -145,7 +149,6 @@ export default function AssessmentPage() {
         <div className="flex-grow">
            <ChatLayout
               messages={messages}
-              setMessages={setMessages}
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
               isRecording={isRecording}

@@ -74,10 +74,17 @@ export default function NonAgenticConversationPage() {
   
   const handleSendMessage = async (messageText: string) => {
     setIsLoading(true);
+    const newMessages: Message[] = [...messages, { id: Date.now().toString(), text: messageText, isAI: false, timestamp: Date.now(), user: { id: 'user', name: 'User', avatarUrl: '' } }];
+    setMessages(newMessages);
+
     try {
       // NOTE: For a true non-agentic mode, a different, more direct prompt/flow would be used.
       // Here we simulate it by providing a more direct response.
-      const feedbackResponse = await generatePersonalizedFeedback({ spokenText: messageText, feedbackRequest: "Provide a direct response." });
+      const feedbackResponse = await generatePersonalizedFeedback({ 
+        history: messages,
+        spokenText: messageText, 
+        feedbackRequest: "Provide a direct response." 
+      });
       
       const aiResponse: Message = {
         id: Date.now().toString(),
@@ -108,7 +115,6 @@ export default function NonAgenticConversationPage() {
         <ChatLayout
             ref={chatLayoutRef}
             messages={messages}
-            setMessages={setMessages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             isRecording={isRecording}
