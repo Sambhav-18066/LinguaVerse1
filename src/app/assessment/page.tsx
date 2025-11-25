@@ -19,10 +19,12 @@ export default function AssessmentPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [conversationStarted, setConversationStarted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState('');
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
 
   const handleStartConversation = (topic: string) => {
+    setSelectedTopic(topic);
     setMessages([
       {
         id: '1',
@@ -45,7 +47,7 @@ export default function AssessmentPage() {
     try {
       const feedbackResponse = await generatePersonalizedFeedback({ 
         spokenText: messageText, 
-        feedbackRequest: "Keep the conversation going. Ask a follow-up question." 
+        feedbackRequest: `Keep the conversation going about the topic: "${selectedTopic}". Ask a follow-up question related to it.`
       });
       
       const aiResponse: Message = {
