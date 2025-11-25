@@ -33,7 +33,7 @@ export default function AssessmentPage() {
         text: `Let's talk about ${topic}. What are your initial thoughts?`,
         timestamp: Date.now(),
         isAI: true,
-        user: { id: 'ai', name: 'Amisha', avatarUrl: '' },
+        user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
       },
     ]);
     setConversationStarted(true);
@@ -57,7 +57,7 @@ export default function AssessmentPage() {
         text: feedbackResponse.feedback,
         timestamp: Date.now(),
         isAI: true,
-        user: { id: 'ai', name: 'Amisha', avatarUrl: '' },
+        user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
       };
       setMessages((prev) => [...prev, aiResponse]);
     } catch (error) {

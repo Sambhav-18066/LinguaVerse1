@@ -12,7 +12,7 @@ const initialMessages: Message[] = [
     text: "Ready to begin.",
     timestamp: Date.now(),
     isAI: true,
-    user: { id: 'ai', name: 'Amisha', avatarUrl: '' },
+    user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
   },
 ];
 
@@ -65,7 +65,7 @@ export default function NonAgenticConversationPage() {
         text: feedbackResponse.feedback,
         timestamp: Date.now(),
         isAI: true,
-        user: { id: 'ai', name: 'Amisha', avatarUrl: '' },
+        user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
       };
       setMessages((prev) => [...prev, aiResponse]);
     } catch (error) {

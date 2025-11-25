@@ -5,7 +5,7 @@ import { ChatInput } from './chat-input';
 import { Card } from '@/components/ui/card';
 import { Bot, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface ChatLayoutProps {
@@ -14,11 +14,11 @@ interface ChatLayoutProps {
   onSendMessage: (message: string, audioBlob?: Blob) => Promise<void>;
   isLoading: boolean;
   isRecording: boolean;
-  isAudioPlaying: boolean;
   onRecordingChange: (isRecording: boolean) => void;
+  isAudioPlaying: boolean;
 }
 
-export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isRecording, isAudioPlaying, onRecordingChange }: ChatLayoutProps) {
+export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, isRecording, onRecordingChange, isAudioPlaying }: ChatLayoutProps) {
   
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
     if (!messageText.trim()) return;
@@ -37,6 +37,7 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
 
   const lastMessage = messages[messages.length - 1];
   const isAiTurn = lastMessage?.isAI || isLoading;
+  const aiAvatarUrl = lastMessage?.isAI ? lastMessage.user.avatarUrl : '/amisha-avatar.png';
 
   return (
     <Card className="h-[calc(100vh-12rem)] w-full max-w-4xl mx-auto flex flex-col shadow-2xl rounded-xl">
@@ -55,6 +56,7 @@ export function ChatLayout({ messages, setMessages, onSendMessage, isLoading, is
                 isAiTurn && "border-primary",
                 isRecording && "border-destructive animate-pulse"
               )}>
+                <AvatarImage src={isAiTurn ? aiAvatarUrl : undefined} />
                 <AvatarFallback className="text-muted-foreground">
                   {isAiTurn ? <Bot className="h-12 w-12" /> : <User className="h-12 w-12" />}
                 </AvatarFallback>

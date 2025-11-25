@@ -13,7 +13,7 @@ const initialMessages: Message[] = [
     text: "Hello! I'm your agentic AI partner. Let's talk about your recent travel experiences. Where is the most interesting place you've visited?",
     timestamp: Date.now(),
     isAI: true,
-    user: { id: 'ai', name: 'Amisha', avatarUrl: '' },
+    user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
   },
 ];
 
@@ -85,7 +85,7 @@ export default function AgenticConversationPage() {
         text: feedbackResponse.feedback,
         timestamp: Date.now(),
         isAI: true,
-        user: { id: 'ai', name: 'Amisha', avatarUrl: '' },
+        user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
       };
       setMessages((prev) => [...prev, aiResponse]);
     } catch (error) {
