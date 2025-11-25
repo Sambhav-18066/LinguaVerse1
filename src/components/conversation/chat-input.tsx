@@ -46,7 +46,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
   };
 
   const startRecording = async () => {
-    if (isRecording || !recognitionRef.current || mediaRecorderRef.current?.state === 'recording') {
+    if (isRecording || mediaRecorderRef.current?.state === 'recording') {
         return;
     };
     
@@ -65,27 +65,30 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
             stream.getTracks().forEach(track => track.stop());
         }
 
-        recognitionRef.current.onresult = (event) => {
-          let interimTranscript = '';
-          let finalTranscript = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-             if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript;
-            } else {
-              interimTranscript += event.results[i][0].transcript;
+        if (recognitionRef.current) {
+            recognitionRef.current.onresult = (event) => {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+                } else {
+                interimTranscript += event.results[i][0].transcript;
+                }
             }
-          }
-          setMessage(finalTranscript + interimTranscript);
-          if (finalTranscript) {
-              stopRecording(finalTranscript);
-          }
-        };
+            setMessage(finalTranscript + interimTranscript);
+            if (finalTranscript) {
+                stopRecording(finalTranscript);
+            }
+            };
 
-        mediaRecorder.start();
-        recognitionRef.current.start();
-        onRecordingChange(true);
-        setMessage('');
-        audioChunksRef.current = [];
+            mediaRecorder.start();
+            recognitionRef.current.start();
+            onRecordingChange(true);
+            setMessage('');
+            audioChunksRef.current = [];
+        }
+
 
     } catch (err) {
         console.error("Error starting recording:", err);
@@ -119,11 +122,14 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(
       };
 
       recognition.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
-        if (event.error === 'no-speech' && isRecording) {
-            // Let it timeout and be handled by onend
-            return
+        if (event.error === 'no-speech') {
+            // This is a common occurrence and not a critical error.
+            // We can let the `onend` event handle the timeout and restart.
+            return;
         }
+        
+        console.error('Speech recognition error', event.error);
+        
         if (isRecording) {
             onRecordingChange(false);
         }
