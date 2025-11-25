@@ -65,11 +65,6 @@ const textToSpeechFlow = ai.defineFlow(
       model: ttsModel,
       config: {
         responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Achernar'},
-          },
-        },
       },
       prompt: text,
     });
