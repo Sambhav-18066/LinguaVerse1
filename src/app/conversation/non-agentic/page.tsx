@@ -8,6 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 import { generateTextToSpeech } from '@/ai/flows/generate-text-to-speech';
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+const amishaAvatar = PlaceHolderImages.find(p => p.id === 'amisha-avatar');
 
 const initialMessages: Message[] = [
   {
@@ -15,7 +18,7 @@ const initialMessages: Message[] = [
     text: "Ready to begin.",
     timestamp: Date.now(),
     isAI: true,
-    user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
+    user: { id: 'ai', name: 'Amisha', avatarUrl: amishaAvatar?.imageUrl },
   },
 ];
 
@@ -118,7 +121,7 @@ export default function NonAgenticConversationPage() {
         text: feedbackResponse.feedback,
         timestamp: Date.now(),
         isAI: true,
-        user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
+        user: { id: 'ai', name: 'Amisha', avatarUrl: amishaAvatar?.imageUrl },
       };
       setMessages((prev) => [...prev, aiResponse]);
       await handleTextToSpeech(aiResponse.text, isAiMuted);

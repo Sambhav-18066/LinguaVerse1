@@ -9,6 +9,9 @@ import { useToast } from '@/hooks/use-toast';
 import { generateTextToSpeech } from '@/ai/flows/generate-text-to-speech';
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+const amishaAvatar = PlaceHolderImages.find(p => p.id === 'amisha-avatar');
 
 const initialMessages: Message[] = [
   {
@@ -16,7 +19,7 @@ const initialMessages: Message[] = [
     text: "Hello! I'm your agentic AI partner, Amisha. Let's talk about your recent travel experiences. Where is the most interesting place you've visited?",
     timestamp: Date.now(),
     isAI: true,
-    user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
+    user: { id: 'ai', name: 'Amisha', avatarUrl: amishaAvatar?.imageUrl },
   },
 ];
 
@@ -134,7 +137,7 @@ export default function AgenticConversationPage() {
         text: feedbackResponse.feedback,
         timestamp: Date.now(),
         isAI: true,
-        user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
+        user: { id: 'ai', name: 'Amisha', avatarUrl: amishaAvatar?.imageUrl },
       };
       setMessages((prev) => [...prev, aiResponse]);
       await handleTextToSpeech(aiResponse.text, isAiMuted);

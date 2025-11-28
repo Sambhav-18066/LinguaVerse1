@@ -8,7 +8,9 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
+import wav from 'wav';
 
 const GenerateTextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to convert to speech.'),
@@ -34,6 +36,29 @@ export async function generateTextToSpeech(
   return generateTextToSpeechFlow(input);
 }
 
+async function toWav(
+  pcmData: Buffer,
+  channels = 1,
+  rate = 24000,
+  sampleWidth = 2
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const writer = new wav.Writer({
+      channels,
+      sampleRate: rate,
+      bitDepth: sampleWidth * 8,
+    });
+
+    const bufs: Buffer[] = [];
+    writer.on('error', reject);
+    writer.on('data', (d) => bufs.push(d));
+    writer.on('end', () => resolve(Buffer.concat(bufs).toString('base64')));
+
+    writer.write(pcmData);
+    writer.end();
+  });
+}
+
 const generateTextToSpeechFlow = ai.defineFlow(
   {
     name: 'generateTextToSpeechFlow',
@@ -43,7 +68,7 @@ const generateTextToSpeechFlow = ai.defineFlow(
   async (input) => {
     try {
         const { media } = await ai.generate({
-            model: 'googleai/gemini-1.5-flash-tts-001',
+            model: googleAI.model('gemini-2.5-flash-preview-tts'),
             config: {
                 responseModalities: ['AUDIO'],
                 speechConfig: {
@@ -59,8 +84,15 @@ const generateTextToSpeechFlow = ai.defineFlow(
             throw new Error('No media URL returned from TTS API.');
         }
 
+        const audioBuffer = Buffer.from(
+          media.url.substring(media.url.indexOf(',') + 1),
+          'base64'
+        );
+
+        const wavData = await toWav(audioBuffer);
+
         return {
-            audioDataUri: media.url,
+            audioDataUri: 'data:audio/wav;base64,' + wavData,
         };
     } catch (error) {
         console.error('Error in generateTextToSpeechFlow:', error);

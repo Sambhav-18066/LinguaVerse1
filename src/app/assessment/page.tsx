@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { generateTextToSpeech } from '@/ai/flows/generate-text-to-speech';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function AssessmentPage() {
   const [assessmentResult, setAssessmentResult] = useState<SpeakingAssessmentResult | null>(null);
@@ -29,6 +30,8 @@ export default function AssessmentPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const chatLayoutRef = useRef<ChatLayoutRef>(null);
   const { toast } = useToast();
+  const amishaAvatar = PlaceHolderImages.find(p => p.id === 'amisha-avatar');
+
 
   const handleStartRecording = useCallback(() => {
     chatLayoutRef.current?.startRecording();
@@ -106,7 +109,7 @@ export default function AssessmentPage() {
         text: initialText,
         timestamp: Date.now(),
         isAI: true,
-        user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
+        user: { id: 'ai', name: 'Amisha', avatarUrl: amishaAvatar?.imageUrl },
       };
 
     setMessages([firstMessage]);
@@ -136,7 +139,7 @@ export default function AssessmentPage() {
         text: feedbackResponse.feedback,
         timestamp: Date.now(),
         isAI: true,
-        user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
+        user: { id: 'ai', name: 'Amisha', avatarUrl: amishaAvatar?.imageUrl },
       };
       setMessages((prev) => [...prev, aiResponse]);
       await handleTextToSpeech(aiResponse.text, isAiMuted);
