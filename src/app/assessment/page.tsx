@@ -11,7 +11,7 @@ import { generatePersonalizedFeedback } from '@/ai/flows/generate-personalized-f
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { FileText, Loader2, Volume2, VolumeX } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { generateTextToSpeech } from '@/ai/flows/generate-text-to-speech';
 
 export default function AssessmentPage() {
@@ -85,30 +85,35 @@ export default function AssessmentPage() {
     audioEl.addEventListener('play', onPlay);
     audioEl.addEventListener('ended', onEnded);
     audioEl.addEventListener('error', onError);
+
+    // Initial message on conversation start
+    if (messages.length === 1 && messages[0].isAI && conversationStarted) {
+      handleTextToSpeech(messages[0].text, isAiMuted);
+    }
   
     return () => {
       audioEl.removeEventListener('play', onPlay);
       audioEl.removeEventListener('ended', onEnded);
       audioEl.removeEventListener('error', onError);
     };
-  }, [toast, isRecording, handleStartRecording]);
+  }, [toast, isRecording, handleStartRecording, messages, conversationStarted, handleTextToSpeech, isAiMuted]);
 
   const handleStartConversation = async (topic: string) => {
     setSelectedTopic(topic);
     const initialText = `Let's talk about ${topic}. What are your initial thoughts?`;
-    setMessages([
-      {
+    const firstMessage = {
         id: '1',
         text: initialText,
         timestamp: Date.now(),
         isAI: true,
         user: { id: 'ai', name: 'Amisha', avatarUrl: '/amisha-avatar.png' },
-      },
-    ]);
+      };
+
+    setMessages([firstMessage]);
     setConversationStarted(true);
     setAssessmentResult(null);
     audioChunksRef.current = [];
-    await handleTextToSpeech(initialText, isAiMuted);
+    // The useEffect above will handle playing the TTS for this first message
   };
 
   const handleSendMessage = async (messageText: string, audioBlob?: Blob) => {
