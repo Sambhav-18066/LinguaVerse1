@@ -69,37 +69,32 @@ const generateTextToSpeechFlow = ai.defineFlow(
     outputSchema: GenerateTextToSpeechOutputSchema,
   },
   async (input) => {
-    try {
-      const { media } = await ai.generate({
+    const { media } = await ai.generate({
         model: 'googleai/gemini-2.5-flash-preview-tts',
         config: {
-          responseModalities: ['AUDIO'],
-          speechConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Achernar' },
+                prebuiltVoiceConfig: { voiceName: 'Achernar' },
             },
-          },
+            },
         },
         prompt: input.text,
-      });
+    });
 
-      if (!media) {
+    if (!media) {
         throw new Error('No media returned from TTS API.');
-      }
-      
-      const audioBuffer = Buffer.from(
+    }
+    
+    const audioBuffer = Buffer.from(
         media.url.substring(media.url.indexOf(',') + 1),
         'base64'
-      );
+    );
 
-      const wavBase64 = await toWav(audioBuffer);
+    const wavBase64 = await toWav(audioBuffer);
 
-      return {
+    return {
         audioDataUri: `data:audio/wav;base64,${wavBase64}`,
-      };
-    } catch (error) {
-      console.error('Error generating text-to-speech:', error);
-      return { audioDataUri: '' };
-    }
+    };
   }
 );
