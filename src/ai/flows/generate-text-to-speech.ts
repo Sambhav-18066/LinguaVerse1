@@ -9,7 +9,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import wav from 'wav';
 
 const GenerateTextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to convert to speech.'),
@@ -35,33 +34,6 @@ export async function generateTextToSpeech(
   return generateTextToSpeechFlow(input);
 }
 
-async function toWav(
-  pcmData: Buffer,
-  channels = 1,
-  rate = 24000,
-  sampleWidth = 2
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
-
-    let bufs = [] as any[];
-    writer.on('error', reject);
-    writer.on('data', function (d) {
-      bufs.push(d);
-    });
-    writer.on('end', function () {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
-
-    writer.write(pcmData);
-    writer.end();
-  });
-}
-
 const generateTextToSpeechFlow = ai.defineFlow(
   {
     name: 'generateTextToSpeechFlow',
@@ -69,32 +41,30 @@ const generateTextToSpeechFlow = ai.defineFlow(
     outputSchema: GenerateTextToSpeechOutputSchema,
   },
   async (input) => {
-    const { media } = await ai.generate({
-        model: 'googleai/gemini-2.5-flash-preview-tts',
-        config: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-            voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: 'Achernar' },
+    try {
+        const { media } = await ai.generate({
+            model: 'googleai/gemini-1.5-flash-tts-001',
+            config: {
+                responseModalities: ['AUDIO'],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: 'Achernar' },
+                    },
+                },
             },
-            },
-        },
-        prompt: input.text,
-    });
+            prompt: input.text,
+        });
 
-    if (!media) {
-        throw new Error('No media returned from TTS API.');
+        if (!media?.url) {
+            throw new Error('No media URL returned from TTS API.');
+        }
+
+        return {
+            audioDataUri: media.url,
+        };
+    } catch (error) {
+        console.error('Error in generateTextToSpeechFlow:', error);
+        throw new Error('Failed to generate text-to-speech audio.');
     }
-    
-    const audioBuffer = Buffer.from(
-        media.url.substring(media.url.indexOf(',') + 1),
-        'base64'
-    );
-
-    const wavBase64 = await toWav(audioBuffer);
-
-    return {
-        audioDataUri: `data:audio/wav;base64,${wavBase64}`,
-    };
   }
 );
