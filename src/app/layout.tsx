@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Toaster } from '@/components/ui/toaster';
+import { Analytics } from '@vercel/analytics/react';
 
 export const metadata: Metadata = {
   title: 'LinguaVerse',
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <AppLayout>{children}</AppLayout>
         <Toaster />
+        <Analytics />
       </body>
     </html>
   );
