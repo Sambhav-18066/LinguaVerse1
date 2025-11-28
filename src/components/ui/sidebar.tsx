@@ -706,27 +706,6 @@ const SidebarMenuSubItem = React.forwardRef<
 >(({...props}, ref) => <li ref={ref} {...props} />);
 SidebarMenuSubItem.displayName = 'SidebarMenuSubItem';
 
-const SidebarMenuSubButton = React.forwardRef<
-  HTMLSpanElement,
-  React.ComponentProps<'span'> & {
-    asChild?: boolean;
-    size?: 'sm' | 'md';
-    isActive?: boolean;
-    children: React.ReactNode;
-  }
->(({asChild = false, children, ...props}, ref) => {
-  const Comp = asChild ? Slot : 'span';
-  return (
-    <Comp
-      ref={ref}
-      {...props}
-    >
-        {children}
-    </Comp>
-  );
-});
-SidebarMenuSubButton.displayName = 'SidebarMenuSubButton';
-
 export {
   Sidebar,
   SidebarContent,
@@ -745,7 +724,6 @@ export {
   SidebarMenuItem,
   SidebarMenuSkeleton,
   SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarRail,
